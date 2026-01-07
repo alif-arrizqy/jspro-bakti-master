@@ -15,9 +15,9 @@
     "prisma:push:loggers": "cross-env PRISMA_SCHEMA=prisma/data-loggers/schema.prisma PRISMA_DATABASE_URL=$DATA_LOGGERS_DATABASE_URL npx prisma db push --schema=prisma/data-loggers/schema.prisma",
     "prisma:migrate:sla": "cross-env PRISMA_SCHEMA=prisma/sla-db/schema.prisma PRISMA_DATABASE_URL=$SLA_DATABASE_URL npx prisma migrate dev --schema=prisma/sla-db/schema.prisma",
     "prisma:migrate:loggers": "cross-env PRISMA_SCHEMA=prisma/data-loggers/schema.prisma PRISMA_DATABASE_URL=$DATA_LOGGERS_DATABASE_URL npx prisma migrate dev --schema=prisma/data-loggers/schema.prisma",
-    "prisma:migrate:deploy:sla": "cross-env PRISMA_SCHEMA=prisma/sla-db/schema.prisma PRISMA_DATABASE_URL=$SLA_DATABASE_URL npx prisma migrate deploy --schema=prisma/sla-db/schema.prisma",
-    "prisma:migrate:deploy:loggers": "cross-env PRISMA_SCHEMA=prisma/data-loggers/schema.prisma PRISMA_DATABASE_URL=$DATA_LOGGERS_DATABASE_URL npx prisma migrate deploy --schema=prisma/data-loggers/schema.prisma",
-    "prisma:migrate:deploy": "npm run prisma:migrate:deploy:sla && npm run prisma:migrate:deploy:loggers",
+    "prisma:deploy:sla": "cross-env PRISMA_SCHEMA=prisma/sla-db/schema.prisma PRISMA_DATABASE_URL=$SLA_DATABASE_URL npx prisma migrate deploy --schema=prisma/sla-db/schema.prisma",
+    "prisma:deploy:loggers": "cross-env PRISMA_SCHEMA=prisma/data-loggers/schema.prisma PRISMA_DATABASE_URL=$DATA_LOGGERS_DATABASE_URL npx prisma migrate deploy --schema=prisma/data-loggers/schema.prisma",
+    "prisma:deploy": "npm run prisma:deploy:sla && npm run prisma:deploy:loggers",
     "prisma:studio:sla": "cross-env PRISMA_SCHEMA=prisma/sla-db/schema.prisma PRISMA_DATABASE_URL=$SLA_DATABASE_URL npx prisma studio --schema=prisma/sla-db/schema.prisma",
     "prisma:studio:loggers": "cross-env PRISMA_SCHEMA=prisma/data-loggers/schema.prisma PRISMA_DATABASE_URL=$DATA_LOGGERS_DATABASE_URL npx prisma studio --schema=prisma/data-loggers/schema.prisma"
   },
