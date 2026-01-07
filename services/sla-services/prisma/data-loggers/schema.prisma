@@ -1,0 +1,44 @@
+// Prisma schema for Data Loggers Database (Read-Only for SLA Internal)
+// Database: data_loggers_db
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/data-loggers-client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  schemas   = ["scc_data"]
+}
+
+model SccDataLogger {
+  id             BigInt   @id @default(autoincrement())
+  siteId         String   @map("site_id") @db.VarChar(50)
+  prCode         String?  @map("pr_code") @db.VarChar(50)
+  timestamp      DateTime @db.Timestamptz
+  batteryVoltage Float?   @map("battery_voltage")
+  cpuTemp        Int?     @map("cpu_temp")
+  load1          Float?   // vsat_current
+  load2          Float?   // bts_current
+  load3          Float?   // obl_current
+  pv1Current     Float?   @map("pv1_current")
+  pv2Current     Float?   @map("pv2_current")
+  pv3Current     Float?   @map("pv3_current")
+  pv1Voltage     Float?   @map("pv1_voltage")
+  pv2Voltage     Float?   @map("pv2_voltage")
+  pv3Voltage     Float?   @map("pv3_voltage")
+  edl1           Float?
+  edl2           Float?
+  edl3           Float?
+  eh1            Float?
+  eh2            Float?
+  eh3            Float?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([siteId, timestamp], name: "idx_scc_site_timestamp")
+  @@index([timestamp], name: "idx_scc_timestamp")
+  @@map("scc_data_loggers")
+  @@schema("scc_data")
+}
+

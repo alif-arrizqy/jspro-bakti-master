@@ -1,0 +1,167 @@
+Project "Sites Services Database" {
+    database_type: 'PostgreSQL'
+    Note: '''
+        # Sites Services Database Documentation
+        **Database untuk Sites Information Management System**
+        
+        ## Fitur:
+        - Site basic information (site_info)
+        - Site detail & location (site_info_detail)
+        - Statistics & reporting support
+        
+        ## Catatan:
+        - contact_person menggunakan JSONB untuk menyimpan array of objects
+        - longitude/latitude menggunakan DECIMAL untuk precision
+        - Menggunakan soft delete pattern (is_active flag)
+        
+        ## Data Transformation Rules:
+        Di lapangan/site menggunakan format berbeda dengan database:
+        
+        | Field | Lapangan | Database |
+        |-------|----------|----------|
+        | scc_type | scc-srne, scc-epever | scc_srne, scc_epever |
+        | status_sites | non-terestrial, terestrial | non_terestrial, terestrial |
+        | battery_version | FULL_TALIS5, MIX_JSPRO, JSPRO | talis5, mix, jspro |
+        
+        API akan otomatis mentransformasi format lapangan ke format database.
+    '''
+}
+
+// ===========================================
+// ENUM DEFINITIONS
+// ===========================================
+Enum status_sites_enum {
+    terestrial [note: "Site dengan koneksi terestrial\nDi lapangan: 'terestrial'"]
+    non_terestrial [note: "Site dengan koneksi non-terestrial/satelit\nDi lapangan: 'non-terestrial' (dengan dash)"]
+}
+
+Enum scc_type_enum {
+    scc_srne [note: "SCC tipe SRNE"]
+    scc_epever [note: "SCC tipe EPEVER"]
+}
+
+Enum battery_version_enum {
+    talis5 [note: "Baterai full TALIS5\nDi lapangan: 'FULL_TALIS5'"]
+    mix [note: "Baterai mix JSPRO\nDi lapangan: 'MIX_JSPRO'"]
+    jspro [note: "Baterai JSPRO\nDi lapangan: 'JSPRO'"]
+}
+
+Enum ehub_version_enum {
+    new [note: "eHub versi baru"]
+    old [note: "eHub versi lama"]
+}
+
+Enum panel2_type_enum {
+    new [note: "Panel 2 tipe baru"]
+    old [note: "Panel 2 tipe lama"]
+}
+
+// ===========================================
+// MAIN TABLES
+// ===========================================
+Table site_info {
+    id serial [pk, note: "Primary key auto increment"]
+    pr_code varchar(50) [unique, note: "Kode PR dari masing-masing site\ncontohnya 'PR#141'\nBoleh null untuk sementara"]
+    site_id varchar(50) [unique, not null, note: "ID unik dari site bakti\ncontohnya 'UXW100'"]
+    cluster_id varchar(50) [note: "ID dari cluster site"]
+    terminal_id varchar(50) [note: "ID terminal site\ncontohnya '2017B820600032'"]
+    site_name varchar(100) [not null, note: "Nama site\ncontohnya 'Rumoy'"]
+    ip_site varchar(50) [note: "IP address site\ncontohnya '10.10.53.67'"]
+    ip_snmp varchar(50) [note: "IP SNMP site\ncontohnya '10.10.53.68'"]
+    ip_mini_pc varchar(50) [note: "IP address mini PC\ncontohnya '192.168.1.4'"]
+    webapp_url varchar(255) [note: "Alamat webapp\ncontohnya 'rumoy.sundaya.local'"]
+    ehub_version ehub_version_enum [note: "Versi eHub: 'new' atau 'old'"]
+    panel2_type panel2_type_enum [note: "Tipe panel 2: 'new' atau 'old'"]
+    scc_type scc_type_enum [note: "Tipe SCC: 'scc_srne' atau 'scc_epever'\nDi lapangan menggunakan 'scc-srne' atau 'scc-epever' (dengan dash)"]
+    battery_version battery_version_enum [note: "Versi baterai: 'talis5', 'mix', atau 'jspro'"]
+    total_battery int [default: 0, note: "Total baterai yang terpasang\ncontohnya 16"]
+    status_sites status_sites_enum [default: 'non_terestrial', note: "Status site: 'terestrial' atau 'non_terestrial'\nDi lapangan menggunakan 'terestrial' atau 'non-terestrial' (dengan dash)"]
+    is_active boolean [default: true, note: "Flag untuk soft delete"]
+    created_at timestamp [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamp [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        site_id [unique, name: "idx_site_info_site_id"]
+        pr_code [unique, name: "idx_site_info_pr_code"]
+        site_name [name: "idx_site_info_site_name"]
+        status_sites [name: "idx_site_info_status"]
+        scc_type [name: "idx_site_info_scc_type"]
+        battery_version [name: "idx_site_info_battery_version"]
+        ehub_version [name: "idx_site_info_ehub_version"]
+        is_active [name: "idx_site_info_is_active"]
+        created_at [name: "idx_site_info_created_at"]
+        (site_id, status_sites) [name: "idx_site_info_site_status"]
+        (status_sites, is_active) [name: "idx_site_info_status_active"]
+    }
+
+    note: "Tabel utama berisi informasi dasar site"
+}
+
+Table site_info_detail {
+    id serial [pk, note: "Primary key auto increment"]
+    site_info_id int [not null, ref: > site_info.id, note: "Foreign key ke site_info"]
+    
+    // Location
+    village varchar(100) [note: "Desa site\ncontohnya 'PURAGI'"]
+    subdistrict varchar(100) [note: "Kecamatan site\ncontohnya 'METEMANI'"]
+    regency varchar(100) [note: "Kabupaten site\ncontohnya 'SORONG SELATAN'"]
+    province varchar(100) [not null, note: "Provinsi site\ncontohnya 'PAPUA BARAT DAYA'"]
+    longitude decimal(11,8) [note: "Longitude site\ncontohnya 132.72745"]
+    latitude decimal(10,8) [note: "Latitude site\ncontohnya -1.36888"]
+    
+    // Network
+    ip_gateway_gs varchar(50) [note: "IP gateway GS\ncontohnya '172.23.51.25'"]
+    ip_gateway_lc varchar(50) [note: "IP gateway LC\ncontohnya '10.53.13.73'"]
+    subnet varchar(10) [note: "Subnet site\ncontohnya '/29'"]
+    
+    // Equipment (using JSONB for flexibility)
+    battery_list jsonb [default: '[]', note: "Array of battery serial numbers\ncontohnya ['SN123456', 'SN654321']"]
+    cabinet_list jsonb [default: '[]', note: "Array of cabinet info\ncontohnya ['Cabinet 1', 'Cabinet 2']"]
+    
+    // Project Info
+    build_year varchar(20) [note: "Tahun pembangunan\ncontohnya '2020-01-01'"]
+    project_phase varchar(100) [note: "Fase project\ncontohnya 'Batch 1 2019'"]
+    onair_date date [note: "Tanggal on air\ncontohnya '2020-01-09'"]
+    gs_sustain_date date [note: "Tanggal GS sustain"]
+    topo_sustain_date date [note: "Tanggal topo sustain"]
+    
+    // Provider Info
+    provider_gs varchar(100) [note: "Provider GS\ncontohnya 'PT. AJN Solusindo'"]
+    beam_provider varchar(100) [note: "Provider beam/LC (kapsat)\ncontohnya 'SATMP3', 'APT5C'"]
+    cellular_operator varchar(50) [note: "Operator cellular\ncontohnya 'TELKOMSEL', 'XL'"]
+    
+    // Contact Person - JSONB for array of objects
+    contact_person jsonb [default: '[]', note: "Array of contact objects\ncontohnya [{\"name\": \"John\", \"phone\": \"08123456789\"}]"]
+    
+    created_at timestamp [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamp [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        site_info_id [unique, name: "idx_site_detail_site_info_id"]
+        province [name: "idx_site_detail_province"]
+        regency [name: "idx_site_detail_regency"]
+        subdistrict [name: "idx_site_detail_subdistrict"]
+        build_year [name: "idx_site_detail_build_year"]
+        project_phase [name: "idx_site_detail_project_phase"]
+        provider_gs [name: "idx_site_detail_provider_gs"]
+        beam_provider [name: "idx_site_detail_beam_provider"]
+        cellular_operator [name: "idx_site_detail_cellular_operator"]
+        onair_date [name: "idx_site_detail_onair_date"]
+        created_at [name: "idx_site_detail_created_at"]
+        (province, regency) [name: "idx_site_detail_location"]
+        (longitude, latitude) [name: "idx_site_detail_coordinates"]
+    }
+
+    note: "Tabel detail berisi informasi lokasi dan detail site"
+}
+
+// ===========================================
+// VIEWS FOR STATISTICS (Optional - for faster queries)
+// ===========================================
+// View: v_site_statistics
+// - Aggregated statistics by status_sites, scc_type, battery_version
+// - Can be materialized for better performance
+
+// View: v_site_full_info  
+// - JOIN site_info dengan site_info_detail
+// - Untuk query yang membutuhkan semua data site

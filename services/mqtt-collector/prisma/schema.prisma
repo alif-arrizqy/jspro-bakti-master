@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["mqtt_collector"]
+}
+
+model MqttMessage {
+  id                BigInt   @id @default(autoincrement())
+  
+  // Identification
+  siteId            String   @map("site_id") @db.VarChar(20)
+  dataType          String   @map("data_type") @db.VarChar(20)
+  
+  // Data
+  payload           Json     // Raw JSON from MQTT
+  
+  // Timestamps
+  messageTimestamp  DateTime @map("message_timestamp") @db.Timestamptz(6)
+  receivedAt        DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt       DateTime? @map("processed_at") @db.Timestamptz(6)
+  
+  // Status tracking
+  status            MessageStatus @default(PENDING)
+  retryCount        Int      @default(0) @map("retry_count")
+  errorMessage      String?  @map("error_message") @db.Text
+  
+  // Metadata
+  mqttTopic         String?  @map("mqtt_topic") @db.VarChar(255)
+  host              String?  @db.VarChar(255)
+  
+  // Indexes
+  @@index([status, receivedAt], name: "idx_status_pending")
+  @@index([status, retryCount], name: "idx_status_failed")
+  @@index([siteId], name: "idx_site_id")
+  @@index([receivedAt(sort: Desc)], name: "idx_received_at")
+  @@index([processedAt, status], name: "idx_cleanup")
+  
+  @@map("mqtt_messages")
+  @@schema("mqtt_collector")
+}
+
+// Enum for message status
+enum MessageStatus {
+  PENDING
+  SENT
+  FAILED
+  
+  @@map("message_status")
+  @@schema("mqtt_collector")
+}

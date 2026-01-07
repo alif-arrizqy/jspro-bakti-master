@@ -1,0 +1,80 @@
+Project "Database Battery Data Docs" {
+    database_type: 'PostgreSQL'
+    Note: '''
+        # Dokumentasi Database Battery Data
+        **Database ini berisi data logger dari pack baterai dan cell voltage dengan interval waktu 5 menit**
+    '''
+}
+
+Table battery_data_loggers {
+    id int [pk, increment]
+    site_id varchar [note: "ID dari site\ncontohnya PAP9999"]
+    pr_code varchar [note: "Kode PR dari masing-masing site yang relasi dengan Table `site_info`, contohnya PR#141 (nullable untuk saat ini)"]
+    timestamp timestamptz [note: "Timestamp dari waktu data logger dibuat\ncontohnya 2025-02-13 09:15:42"]
+    battery_type varchar [note: "Tipe baterai yang digunakan\ncontohnya talis5"]
+    slave_id int [note: "ID dari pack baterai\ncontohnya 1"]
+    pcb_code varchar [note: "Kode PCB dari pack baterai\ncontohnya TBI24032703195"]
+    sn1_code varchar [note: "Kode SN1 dari pack baterai\ncontohnya AO67950111"]
+    port varchar [note: "Port yang terpasang dari pack baterai\ncontohnya usb0"]
+    counter int [note: "Jumlah counter dari proses pembacaan modbus\ncontohnya 6"]
+    pack_voltage int [note: "Nilai voltage dari pack baterai dalam format voltage (mV)\ncontohnya 5340"]
+    pack_current int [note: "Nilai current dari pack baterai dalam format ampere (mA)\ncontohnya 14"]
+    remaining_capacity int [note: "Nilai kapasitas sisa dari pack baterai dalam format ampere hour (mAh)\ncontohnya 100"]
+    average_cell_temperature int [note: "Nilai suhu rata-rata dari cell pack baterai dalam format celcius (°C)\ncontohnya 24"]
+    environment_temperature int [note: "Nilai suhu lingkungan dari pack baterai dalam format celcius (°C)\ncontohnya 29"]
+    soc int [note: "Nilai state of charge dari pack baterai dalam format persen (0.01%)\ncontohnya 10000 = 100%"]
+    soh int [note: "Nilai state of health dari pack baterai dalam format persen (0.01%)\ncontohnya 10000 = 100%"]
+    full_capacity int [note: "Nilai kapasitas penuh dari pack baterai dalam format ampere hour (mAh)\ncontohnya 100"]
+    cycle_count int [note: "Jumlah cycle (charge dan discharge) dari pack baterai\ncontohnya 20"]
+    cell_voltage_id int [ref: > cell_battery_data.id, note: "ID dari tabel cell_battery_data"]
+    max_cell_voltage int [note: "Nilai voltage tertinggi dari cell pack baterai dalam format mili voltage (mV)\ncontohnya 3556"]
+    min_cell_voltage int [note: "Nilai voltage terendah dari cell pack baterai dalam format mili voltage (mV)\ncontohnya 3340"]
+    cell_difference int [note: "Selisih nilai max_cell_voltage dan min_cell_voltage\ncontohnya 200"]
+    max_cell_temperature int [note: "Nilai suhu tertinggi dari cell pack baterai dalam format celcius (°C)\ncontohnya 32"]
+    min_cell_temperature int [note: "Nilai suhu terendah dari cell pack baterai dalam format celcius (°C)\ncontohnya 28"]
+    fet_temperature int [note: "Nilai suhu dari mosfet dalam format celcius (°C)\ncontohnya 28"]
+    ambient_temperature int [note: "Nilai suhu dari sensor suhu pada PCB BMS dalam format celcius (°C)\ncontohnya 35"]
+    remaining_charging_time int [note: "Waktu untuk full charge dari pack baterai dalam format menit\ncontohnya 65535"]
+    remaining_discharging_time int [note: "Waktu untuk full discharge dari pack baterai dalam format menit\ncontohnya 65535"]
+    cell_temperature1 int [note: "Nilai suhu dari cell pack baterai (top) dalam format celcius (°C)\ncontohnya 32"]
+    cell_temperature2 int [note: "Nilai suhu dari cell pack baterai (middle) dalam format celcius (°C)\ncontohnya 31"]
+    cell_temperature3 int [note: "Nilai suhu dari cell pack baterai (bottom) dalam format celcius (°C)\ncontohnya 24"]
+    warning_flag varchar[] [note: "Alarm peringatan dari pack baterai\ncontohnya ['no alarm detected']"]
+    protect_flag varchar[] [note: "Alarm proteksi dari pack baterai\ncontohnya ['battery cell overvoltage protection']"]
+    fault_flag varchar[] [note: "Alarm fault dari pack baterai\ncontohnya ['charge Mosfet OFF','discharge Mosfet ON','charge limit current function is ON']"]
+    error_messages varchar[] [note: "Pesan jika terjadi error apabila melewati nilai batas config\ncontohnya ['Pack voltage 5403 exceeds limit 5325', 'Max cell voltage 3418 exceeds limit 425 at indices [9]']"]
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        (site_id, timestamp) [name: "idx_battery_site_timestamp"]
+        (site_id, slave_id) [name: "idx_battery_site_slave"]
+        timestamp [name: "idx_battery_timestamp"]
+    }
+
+    note: "Tabel `battery_data_loggers` berisi data logger dari pack baterai"
+}
+
+Table cell_battery_data {
+    id int [pk, increment]
+    cell1 int [note: "Nilai voltage dari cell 1 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell2 int [note: "Nilai voltage dari cell 2 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell3 int [note: "Nilai voltage dari cell 3 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell4 int [note: "Nilai voltage dari cell 4 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell5 int [note: "Nilai voltage dari cell 5 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell6 int [note: "Nilai voltage dari cell 6 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell7 int [note: "Nilai voltage dari cell 7 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell8 int [note: "Nilai voltage dari cell 8 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell9 int [note: "Nilai voltage dari cell 9 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell10 int [note: "Nilai voltage dari cell 10 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell11 int [note: "Nilai voltage dari cell 11 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell12 int [note: "Nilai voltage dari cell 12 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell13 int [note: "Nilai voltage dari cell 13 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell14 int [note: "Nilai voltage dari cell 14 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell15 int [note: "Nilai voltage dari cell 15 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    cell16 int [note: "Nilai voltage dari cell 16 pack baterai dalam format mili voltage (mV)\ncontohnya 3354"]
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    note: "Tabel `cell_battery_data` berisi data voltage dari masing-masing cell pack baterai"
+}

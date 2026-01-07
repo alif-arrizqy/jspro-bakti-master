@@ -1,0 +1,98 @@
+Project "Database SLA Docs" {
+  database_type: 'PostgreSQL'
+  Note: '''
+    # Dokumentasi Database SLA
+    **Database untuk Logger SLA Bakti dan SLA Internal**
+  '''
+}
+
+Table sla_bakti {
+    id int [pk, increment]
+    date date [note: "Tanggal dari data SLA, contohnya 2025-01-01"]
+    site_id varchar [note: "ID dari site, contohnya PAP9999"]
+    pr_code varchar [note: "Kode PR dari masing-masing site, contohnya PR#141"]
+    sla float [note: "Nilai Service Level Agreement (SLA) dari masing-masing site, contohnya 100, 98.5"]
+    power_uptime float [note: "Nilai uptime persentase dari masing-masing site, contohnya 99.5"]
+    power_downtime float [note: "Nilai downtime persentase dari masing-masing site, contohnya 0.5"]
+    status_sla varchar [note: "Status SLA dari masing-masing site, contohnya 'Meet SLA', 'Very Bad', 'Bad', 'Fair'"]
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        (site_id, date) [unique, name: "idx_sla_bakti_site_date"]
+        date [name: "idx_sla_bakti_date"]
+        site_id [name: "idx_sla_bakti_site_id"]
+    }
+
+    note: "Tabel `sla_bakti` berisi data SLA dari data excel yang berasal dari NMS Semeru dan diupload oleh admin ke dalam database"
+}
+
+// Header table untuk SLA Report (satu report per date + siteId)
+Table sla_report {
+  id int [pk, increment]
+  date date [note: "Tanggal dari data SLA, contohnya 2025-01-01"]
+  site_id varchar [note: "ID dari site, contohnya PAP9999"]
+  pr_code varchar [note: "Kode PR dari masing-masing site, contohnya PR#141"]
+  notes varchar [note: "Catatan umum/tambahan dari report, contohnya 'Multiple issues reported'"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  Indexes {
+    (site_id, date) [unique, name: "idx_sla_report_site_date"]
+    site_id [name: "idx_sla_report_site_id"]
+    date [name: "idx_sla_report_date"]
+    pr_code [name: "idx_sla_report_pr_code"]
+  }
+  
+  note: "Header table untuk SLA Report. Satu report per date + siteId, bisa punya multiple problems dengan PIC berbeda."
+}
+
+// Detail table untuk problems dalam satu report (one-to-many dengan sla_report)
+Table sla_report_problem {
+  id int [pk, increment]
+  report_id int [ref: > sla_report.id, note: "Foreign key ke sla_report"]
+  pic varchar [note: "Nama PIC untuk problem ini, contohnya 'VSAT', 'POWER', 'SNMP'"]
+  problem varchar [note: "Masalah yang terjadi, contohnya 'VSAT DOWN', 'SNMP DOWN', 'Battery issue'"]
+  notes varchar [note: "Catatan spesifik untuk problem ini, contohnya 'VSAT sudah up sejak kemarin'"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  Indexes {
+    report_id [name: "idx_sla_report_problem_report_id"]
+    pic [name: "idx_sla_report_problem_pic"]
+  }
+  
+  note: "Detail problems untuk setiap SLA Report. Satu report bisa punya multiple problems, dan setiap problem bisa punya PIC yang berbeda."
+}
+
+Table history_gamas {
+  id int [pk, increment]
+  date date [note: "Tanggal terjadi gamas, contohnya 2025-01-01"]
+  description varchar [note: "Alasan terjadi gamas, contohnya 'Gamas karena cuaca buruk']
+}
+
+// Master table untuk daftar semua reasons yang mungkin
+Table sla_reason {
+  id int [pk, increment]
+  reason varchar [unique, note: "Penyebab/alasan SLA drop, contohnya 'SNMP DOWN', 'Problem VSAT', 'Insiden terbakar'"]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  note: "Master table untuk menyimpan daftar semua alasan/penyebab SLA drop"
+}
+
+// Junction table untuk relasi many-to-many antara battery version dan reasons
+Table battery_version_reason {
+  id int [pk, increment]
+  battery_version varchar [note: "Versi baterai, contohnya 'talis5', 'mix', 'jspro'"]
+  reason_id int [ref: > sla_reason.id, note: "Foreign key ke sla_reason"]
+  created_at timestamptz [default: `now()`]
+  
+  Indexes {
+    (battery_version, reason_id) [unique, name: "idx_battery_version_reason_unique"]
+    battery_version [name: "idx_battery_version_reason_battery"]
+    reason_id [name: "idx_battery_version_reason_reason"]
+  }
+  
+  note: "Junction table untuk menghubungkan battery version dengan multiple reasons. Satu battery version bisa punya banyak reasons."
+}

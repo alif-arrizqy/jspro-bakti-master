@@ -1,0 +1,131 @@
+// Prisma Schema for Data Loggers Database
+// Database: data_loggers_db (Permanent/Historical)
+// Purpose: Store battery and SCC logger data for years
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/data-loggers-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["battery_data", "scc_data"]
+}
+
+// ============================================================
+// BATTERY DATA SCHEMA - Battery pack and cell voltage data
+// ============================================================
+
+model BatteryDataLogger {
+  id                       BigInt   @id @default(autoincrement())
+  siteId                   String   @map("site_id") @db.VarChar(20)
+  prCode                   String?  @map("pr_code") @db.VarChar(20)
+  timestamp                DateTime @db.Timestamptz(6)
+  batteryType              String?  @map("battery_type") @db.VarChar(50)
+  slaveId                  Int?     @map("slave_id")
+  pcbCode                  String?  @map("pcb_code") @db.VarChar(50)
+  sn1Code                  String?  @map("sn1_code") @db.VarChar(50)
+  port                     String?  @db.VarChar(20)
+  counter                  Int?
+  packVoltage              Int?     @map("pack_voltage")
+  packCurrent              Int?     @map("pack_current")
+  remainingCapacity        Int?     @map("remaining_capacity")
+  averageCellTemperature   Int?     @map("average_cell_temperature")
+  environmentTemperature   Int?     @map("environment_temperature")
+  soc                      Int?
+  soh                      Int?
+  fullCapacity             Int?     @map("full_capacity")
+  cycleCount               Int?     @map("cycle_count")
+  cellVoltageId            BigInt?  @map("cell_voltage_id")
+  maxCellVoltage           Int?     @map("max_cell_voltage")
+  minCellVoltage           Int?     @map("min_cell_voltage")
+  cellDifference           Int?     @map("cell_difference")
+  maxCellTemperature       Int?     @map("max_cell_temperature")
+  minCellTemperature       Int?     @map("min_cell_temperature")
+  fetTemperature           Int?     @map("fet_temperature")
+  ambientTemperature       Int?     @map("ambient_temperature")
+  remainingChargingTime    Int?     @map("remaining_charging_time")
+  remainingDischargingTime Int?     @map("remaining_discharging_time")
+  cellTemperature1         Int?     @map("cell_temperature1")
+  cellTemperature2         Int?     @map("cell_temperature2")
+  cellTemperature3         Int?     @map("cell_temperature3")
+  warningFlag              String[] @map("warning_flag")
+  protectFlag              String[] @map("protect_flag")
+  faultFlag                String[] @map("fault_flag")
+  errorMessages            String[] @map("error_messages")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relation to cell voltage data
+  cellVoltage CellBatteryData? @relation(fields: [cellVoltageId], references: [id])
+
+  @@index([siteId, timestamp(sort: Desc)], name: "idx_battery_site_timestamp")
+  @@index([siteId, slaveId], name: "idx_battery_site_slave")
+  @@index([timestamp(sort: Desc)], name: "idx_battery_timestamp")
+  @@map("battery_data_loggers")
+  @@schema("battery_data")
+}
+
+model CellBatteryData {
+  id        BigInt   @id @default(autoincrement())
+  cell1     Int?
+  cell2     Int?
+  cell3     Int?
+  cell4     Int?
+  cell5     Int?
+  cell6     Int?
+  cell7     Int?
+  cell8     Int?
+  cell9     Int?
+  cell10    Int?
+  cell11    Int?
+  cell12    Int?
+  cell13    Int?
+  cell14    Int?
+  cell15    Int?
+  cell16    Int?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Reverse relation
+  batteryDataLoggers BatteryDataLogger[]
+
+  @@map("cell_battery_data")
+  @@schema("battery_data")
+}
+
+// ============================================================
+// SCC DATA SCHEMA - Solar Charge Controller data
+// ============================================================
+
+model SccDataLogger {
+  id             BigInt   @id @default(autoincrement())
+  siteId         String   @map("site_id") @db.VarChar(20)
+  prCode         String?  @map("pr_code") @db.VarChar(20)
+  timestamp      DateTime @db.Timestamptz(6)
+  batteryVoltage Float?   @map("battery_voltage")
+  cpuTemp        Int?     @map("cpu_temp")
+  load1          Float?
+  load2          Float?
+  load3          Float?
+  pv1Current     Float?   @map("pv1_current")
+  pv2Current     Float?   @map("pv2_current")
+  pv3Current     Float?   @map("pv3_current")
+  pv1Voltage     Float?   @map("pv1_voltage")
+  pv2Voltage     Float?   @map("pv2_voltage")
+  pv3Voltage     Float?   @map("pv3_voltage")
+  edl1           Float?
+  edl2           Float?
+  edl3           Float?
+  eh1            Float?
+  eh2            Float?
+  eh3            Float?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([siteId, timestamp(sort: Desc)], name: "idx_scc_site_timestamp")
+  @@index([timestamp(sort: Desc)], name: "idx_scc_timestamp")
+  @@map("scc_data_loggers")
+  @@schema("scc_data")
+}
+

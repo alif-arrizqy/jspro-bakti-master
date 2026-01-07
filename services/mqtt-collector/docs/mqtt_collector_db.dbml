@@ -1,0 +1,24 @@
+Project "Database MQTT Collector Service Docs" {
+    database_type: 'PostgreSQL'
+    Note: '''
+        # Dokumentasi Database MQTT Collector Service
+        **Database ini untuk MQTT Messages (Temporary)**
+    '''
+}
+
+Table mqtt_messages {
+    id int [pk, increment]
+    site_id varchar [note: Untuk identifikasi]
+    data_type varchar [note: 'energy' / 'battery']
+    payload jsonb [note: Raw data dari MQTT]
+    message_timestamp timestamptz [note: Dari JSON]
+    received_at timestamptz [note: Kapan diterima]
+    processed_at timestamptz [note: Kapan diproses] 
+    status varchar [note: 'pending'/'sent'/'failed']
+    retry_count int [note: Jumlah retry]
+    error_message text [note: Pesan error]
+    mqtt_topic varchar [note: Topic MQTT]
+    host varchar [note: Host MQTT]
+}
+
+note: "TTL: 60 hari (status='sent')"

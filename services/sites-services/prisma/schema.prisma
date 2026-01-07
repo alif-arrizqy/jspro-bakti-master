@@ -1,0 +1,136 @@
+// Prisma Schema for Sites Services
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================
+// ENUMS
+// ===========================================
+enum StatusSites {
+  terestrial
+  non_terestrial
+}
+
+enum SccType {
+  scc_srne
+  scc_epever
+}
+
+enum BatteryVersion {
+  talis5
+  mix
+  jspro
+}
+
+enum EhubVersion {
+  new
+  old
+}
+
+enum Panel2Type {
+  new
+  old
+}
+
+// ===========================================
+// MODELS
+// ===========================================
+model SiteInfo {
+  id              Int             @id @default(autoincrement())
+  prCode          String?         @unique @map("pr_code") @db.VarChar(50)
+  siteId          String          @unique @map("site_id") @db.VarChar(50)
+  clusterId       String?         @map("cluster_id") @db.VarChar(50)
+  terminalId      String?         @map("terminal_id") @db.VarChar(50)
+  siteName        String          @map("site_name") @db.VarChar(100)
+  ipSite          String?         @map("ip_site") @db.VarChar(50)
+  ipSnmp          String?         @map("ip_snmp") @db.VarChar(50)
+  ipMiniPc        String?         @map("ip_mini_pc") @db.VarChar(50)
+  webappUrl       String?         @map("webapp_url") @db.VarChar(255)
+  ehubVersion     EhubVersion?    @map("ehub_version")
+  panel2Type      Panel2Type?     @map("panel2_type")
+  sccType         SccType?        @map("scc_type")
+  batteryVersion  BatteryVersion? @map("battery_version")
+  totalBattery    Int?            @default(0) @map("total_battery")
+  statusSites     StatusSites     @default(non_terestrial) @map("status_sites")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  detail          SiteInfoDetail?
+
+  @@index([siteId], name: "idx_site_info_site_id")
+  @@index([prCode], name: "idx_site_info_pr_code")
+  @@index([siteName], name: "idx_site_info_site_name")
+  @@index([statusSites], name: "idx_site_info_status")
+  @@index([sccType], name: "idx_site_info_scc_type")
+  @@index([batteryVersion], name: "idx_site_info_battery_version")
+  @@index([ehubVersion], name: "idx_site_info_ehub_version")
+  @@index([isActive], name: "idx_site_info_is_active")
+  @@index([siteId, statusSites], name: "idx_site_info_site_status")
+  @@index([statusSites, isActive], name: "idx_site_info_status_active")
+  @@map("site_info")
+}
+
+model SiteInfoDetail {
+  id              Int       @id @default(autoincrement())
+  siteInfoId      Int       @unique @map("site_info_id")
+  
+  // Location
+  village         String?   @db.VarChar(100)
+  subdistrict     String?   @db.VarChar(100)
+  regency         String?   @db.VarChar(100)
+  province        String    @db.VarChar(100)
+  longitude       Decimal?  @db.Decimal(11, 8)
+  latitude        Decimal?  @db.Decimal(10, 8)
+  
+  // Network
+  ipGatewayGs     String?   @map("ip_gateway_gs") @db.VarChar(50)
+  ipGatewayLc     String?   @map("ip_gateway_lc") @db.VarChar(50)
+  subnet          String?   @db.VarChar(10)
+  
+  // Equipment (JSONB)
+  batteryList     Json?     @default("[]") @map("battery_list")
+  cabinetList     Json?     @default("[]") @map("cabinet_list")
+  
+  // Project Info
+  buildYear       String?   @map("build_year") @db.VarChar(20)
+  projectPhase    String?   @map("project_phase") @db.VarChar(100)
+  onairDate       DateTime? @map("onair_date") @db.Date
+  gsSustainDate   DateTime? @map("gs_sustain_date") @db.Date
+  topoSustainDate DateTime? @map("topo_sustain_date") @db.Date
+  talisInstalled  DateTime? @map("talis_installed") @db.Date
+  
+  // Provider Info
+  providerGs      String?   @map("provider_gs") @db.VarChar(100)
+  beamProvider    String?   @map("beam_provider") @db.VarChar(100)
+  cellularOperator String?  @map("cellular_operator") @db.VarChar(50)
+  
+  // Contact Person (JSONB array of objects)
+  contactPerson   Json?     @default("[]") @map("contact_person")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  siteInfo        SiteInfo  @relation(fields: [siteInfoId], references: [id], onDelete: Cascade)
+
+  @@index([province], name: "idx_site_detail_province")
+  @@index([regency], name: "idx_site_detail_regency")
+  @@index([subdistrict], name: "idx_site_detail_subdistrict")
+  @@index([buildYear], name: "idx_site_detail_build_year")
+  @@index([projectPhase], name: "idx_site_detail_project_phase")
+  @@index([providerGs], name: "idx_site_detail_provider_gs")
+  @@index([beamProvider], name: "idx_site_detail_beam_provider")
+  @@index([cellularOperator], name: "idx_site_detail_cellular_operator")
+  @@index([onairDate], name: "idx_site_detail_onair_date")
+  @@index([province, regency], name: "idx_site_detail_location")
+  @@map("site_info_detail")
+}
+

@@ -1,0 +1,40 @@
+Project "Database SCC Data Docs" {
+    database_type: 'PostgreSQL'
+    Note: '''
+        # Dokumentasi Database SCC Data
+        **Database untuk Logger SCC dengan interval waktu 5 menit**
+    '''
+}
+
+Table scc_data_loggers {
+    id int [pk, increment]
+    site_id varchar [note: "ID dari site\ncontohnya PAP9999"]
+    pr_code varchar [note: "Kode PR dari masing-masing site yang relasi dengan Table `site_info`, contohnya PR#141 (nullable untuk saat ini)"]
+    timestamp timestamptz [note: "Timestamp dari waktu data logger dibuat\ncontohnya 2025-02-13 09:15:42"]
+    battery_voltage float [note: "Nilai voltage dari baterai dalam format voltage (mV)\ncontohnya 5314"]
+    cpu_temp int [note: "Nilai temperatur dari CPU dalam format celcius (°C)\ncontohnya 45"]
+    load1 float [note: "Nilai load1 dari SCC 1 dalam format ampere (A)\ncontohnya 1.4"]
+    load2 float [note: "Nilai load2 dari SCC 2 dalam format ampere (A)\ncontohnya 8.2"]
+    load3 float [note: "Nilai load3 dari SCC 3 dalam format ampere (A)\ncontohnya 0.2 atau null (opsional)"]
+    pv1_current float [note: "Nilai current dari PV SCC 1 dalam format ampere (A)\ncontohnya 1.7"]
+    pv2_current float [note: "Nilai current dari PV SCC 2 dalam format ampere (A)\ncontohnya 5.6"]
+    pv3_current float [note: "Nilai current dari PV SCC 3 dalam format ampere (A)\ncontohnya 1.5 atau null (opsional)"]
+    pv1_voltage float [note: "Nilai voltage dari PV SCC 1 dalam format voltage (V)\ncontohnya 79.8"]
+    pv2_voltage float [note: "Nilai voltage dari PV SCC 2 dalam format voltage (V)\ncontohnya 76.6"]
+    pv3_voltage float [note: "Nilai voltage dari PV SCC 3 dalam format voltage (V)\ncontohnya 4.5 atau null (opsional)"]
+    edl1 float [note: "Hasil akumulasi dari baterai voltage * load 1\ncontohnya -26.3"]
+    edl2 float [note: "Hasil akumulasi dari baterai voltage * load 2\ncontohnya -108.9"]
+    edl3 float [note: "Hasil akumulasi dari baterai voltage * load 3\ncontohnya -5.1 atau null (opsional)"]
+    eh1 float [note: "Hasil akumulasi dari harvest energy SCC\ncontohnya 141.3"]
+    eh2 float [note: "Hasil akumulasi dari harvest energy SCC\ncontohnya 175.6"]
+    eh3 float [note: "Hasil akumulasi dari harvest energy SCC\ncontohnya 0.0 atau null (opsional)"]
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        (site_id, timestamp) [name: "idx_scc_site_timestamp"]
+        timestamp [name: "idx_scc_timestamp"]
+    }
+
+    note: "Tabel `scc_data_loggers` berisi data logger dari SCC untuk SLA internal dan analisa data"
+}

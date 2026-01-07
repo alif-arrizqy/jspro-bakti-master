@@ -1,0 +1,111 @@
+// Prisma schema for SLA Database
+// Database: sla_db
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/sla-client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  schemas   = ["sla"]
+}
+
+enum PicType {
+  VSAT
+  POWER
+  SNMP
+
+  @@schema("sla")
+}
+
+model SlaBakti {
+  id            Int      @id @default(autoincrement())
+  date          DateTime @db.Date
+  siteId        String   @map("site_id") @db.VarChar(50)
+  prCode        String?  @map("pr_code") @db.VarChar(50)
+  sla           Float?
+  powerUptime   Float?   @map("power_uptime")
+  powerDowntime Float?   @map("power_downtime")
+  statusSla     String?  @map("status_sla") @db.VarChar(50)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([siteId, date], name: "idx_sla_bakti_site_date")
+  @@index([date], name: "idx_sla_bakti_date")
+  @@index([siteId], name: "idx_sla_bakti_site_id")
+  @@map("sla_bakti")
+  @@schema("sla")
+}
+
+model SlaReport {
+  id        Int                  @id @default(autoincrement())
+  date      DateTime             @db.Date
+  siteId    String               @map("site_id") @db.VarChar(50)
+  prCode    String?              @map("pr_code") @db.VarChar(50)
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  problems  SlaReportProblem[]
+
+  @@unique([siteId, date], name: "idx_sla_report_site_date")
+  @@index([siteId], name: "idx_sla_report_site_id")
+  @@index([date], name: "idx_sla_report_date")
+  @@index([prCode], name: "idx_sla_report_pr_code")
+  @@map("sla_report")
+  @@schema("sla")
+}
+
+model SlaReportProblem {
+  id        Int       @id @default(autoincrement())
+  reportId  Int       @map("report_id")
+  pic       String?   @map("pic") @db.VarChar(50)
+  problem   String?   @map("problem") @db.VarChar(255)
+  notes     String?   @map("notes") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  report    SlaReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId], name: "idx_sla_report_problem_report_id")
+  @@index([pic], name: "idx_sla_report_problem_pic")
+  @@map("sla_report_problem")
+  @@schema("sla")
+}
+
+model HistoryGamas {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  description String?  @map("description") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([date], name: "idx_history_gamas_date")
+  @@map("history_gamas")
+  @@schema("sla")
+}
+
+model SlaReason {
+  id        Int                     @id @default(autoincrement())
+  reason    String                  @unique @db.VarChar(255)
+  createdAt DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  batteryVersions BatteryVersionReason[]
+
+  @@map("sla_reason")
+  @@schema("sla")
+}
+
+model BatteryVersionReason {
+  id             Int       @id @default(autoincrement())
+  batteryVersion String    @map("battery_version") @db.VarChar(50)
+  reasonId       Int       @map("reason_id")
+  period         String    @db.VarChar(7) // Format: YYYY-MM (e.g., "2024-01")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  reason         SlaReason @relation(fields: [reasonId], references: [id], onDelete: Cascade)
+
+  @@unique([batteryVersion, reasonId, period], name: "idx_battery_version_reason_unique")
+  @@index([batteryVersion], name: "idx_battery_version_reason_battery")
+  @@index([reasonId], name: "idx_battery_version_reason_reason")
+  @@index([batteryVersion, period], name: "idx_battery_version_reason_battery_period")
+  @@map("battery_version_reason")
+  @@schema("sla")
+}
