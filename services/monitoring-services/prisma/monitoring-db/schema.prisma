@@ -1,11 +1,11 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../../node_modules/@prisma/site-down-client"
+  output   = "../../node_modules/@prisma/monitoring-client"
 }
 
 datasource db {
   provider  = "postgresql"
-  schemas   = ["site_down"]
+  schemas   = ["monitoring"]
 }
 
 model SiteDowntime {
@@ -20,6 +20,17 @@ model SiteDowntime {
   @@index([siteId], name: "idx_site_downtime_site_id")
   @@index([downSince], name: "idx_site_downtime_down_since")
   @@map("site_downtime")
-  @@schema("site_down")
+  @@schema("monitoring")
 }
 
+model SiteUp {
+  id          Int      @id @default(autoincrement())
+  siteId      String   @unique @map("site_id") @db.VarChar(50)
+  siteName    String?  @map("site_name") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([siteId], name: "idx_site_up_site_id")
+  @@map("site_up")
+  @@schema("monitoring")
+}
