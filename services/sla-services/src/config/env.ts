@@ -12,7 +12,8 @@ const envSchema = z.object({
     DATA_LOGGERS_DATABASE_URL: z.string().url(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
     SITES_SERVICE_URL: z.string().url(),
-    REDIS_URL: z.string().url().optional(),
+    REDIS_URL: z.string(),
+    MONITORING_SERVICE_URL: z.string(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -41,6 +42,7 @@ export const config = {
     },
     services: {
         sitesServiceUrl: parsed.data.SITES_SERVICE_URL,
+        monitoringServiceUrl: parsed.data.MONITORING_SERVICE_URL,
     },
     cache: {
         redisUrl: parsed.data.REDIS_URL,

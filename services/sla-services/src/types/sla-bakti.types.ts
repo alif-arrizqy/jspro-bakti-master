@@ -160,7 +160,7 @@ export interface SlaSummarySiteItem {
     downtime: string;
     problem?: string | null;
     site: string;
-    battery_version: "talis5" | "mix" | "jspro";
+    batteryVersion: "talis5" | "mix" | "jspro";  // Changed from battery_version to batteryVersion (camelCase)
 }
 
 export interface SlaSummaryDropUpItem {
@@ -171,7 +171,7 @@ export interface SlaSummaryDropUpItem {
     downtime: string;
     problem?: string | null;
     site: string;
-    battery_version: "talis5" | "mix" | "jspro";
+    batteryVersion: "talis5" | "mix" | "jspro";  // Changed from battery_version to batteryVersion (camelCase)
 }
 
 export interface SlaSummaryBatteryVersion {
@@ -203,6 +203,41 @@ export interface SlaDailyDetailResponse {
                 mix: SlaSummaryBatteryVersion;
                 jspro: SlaSummaryBatteryVersion;
             };
+        };
+    };
+    slaBelow95: SlaBelow95Section;
+}
+
+// ============================================================
+// SLA Below 95.5% Section Types
+// ============================================================
+
+// Site item for SLA Below 95.5% section (output format)
+export interface SlaBelow95SiteOutput {
+    sla: number;                    // slaAverage renamed to sla
+    site: string;                   // siteName renamed to site
+    downtime: string;               // downtimeDisplay renamed to downtime
+    problem: string | null;
+    batteryVersion: "talis5" | "mix" | "jspro";  // Always present, not null
+    statusSP: "Potensi SP" | "Clear SP";  // Status SP based on SLA < 75
+}
+
+// Battery version detail for SLA Below 95.5% section
+export interface SlaBelow95BatteryVersionDetail {
+    name: string;                   // "Talis5 Full", "Talis5 Mix", "JS Pro"
+    totalSites: number;
+    sites: SlaBelow95SiteOutput[];
+}
+
+// SLA Below 95.5% Section (final output structure)
+export interface SlaBelow95Section {
+    message: string;                // "Dear team, berikut site yang memiliki SLA avg dibawah 95.5% pada tanggal {endDate}"
+    totalSites: number;
+    detail: {
+        batteryVersion: {
+            talis5: SlaBelow95BatteryVersionDetail;
+            mix: SlaBelow95BatteryVersionDetail;
+            jspro: SlaBelow95BatteryVersionDetail;
         };
     };
 }
