@@ -1032,7 +1032,7 @@ export class SlaBaktiService {
         // Use Math.abs and comparison to handle floating point precision issues
         if (Math.abs(powerDowntimeValue - 100) < 0.01 || powerDowntimeValue === 100) {
             try {
-                slaLogger.info({ siteId, powerDowntime: powerDowntimeValue }, "power_downtime=100 detected, fetching downSince from monitoring service");
+                slaLogger.info({ siteId, powerDowntime: powerDowntimeValue, targetDate: date.toISOString() }, "power_downtime=100 detected, fetching downSince from monitoring service");
                 const siteDowntime = await siteDownService.getSiteDowntime(siteId);
                 
                 if (siteDowntime && siteDowntime.downSince) {
@@ -1040,13 +1040,30 @@ export class SlaBaktiService {
                     const days = siteDownService.calculateDowntimeDays(siteDowntime.downSince, date);
                     // Return actual days, not "Lebih Dari 4 Hari"
                     if (days > 0) {
-                        slaLogger.info({ siteId, days, downSince: siteDowntime.downSince, powerDowntime: powerDowntimeValue }, "Using downSince for downtime calculation (power_downtime=100)");
+                        slaLogger.info({ 
+                            siteId, 
+                            days, 
+                            downSince: siteDowntime.downSince, 
+                            targetDate: date.toISOString(),
+                            powerDowntime: powerDowntimeValue 
+                        }, "Using downSince for downtime calculation (power_downtime=100)");
                         return `${days} Hari`;
                     } else {
+                        slaLogger.warn({ 
+                            siteId, 
+                            days, 
+                            downSince: siteDowntime.downSince, 
+                            targetDate: date.toISOString() 
+                        }, "Calculated days = 0, returning 'Kurang dari 1 Hari'");
                         return "Kurang dari 1 Hari";
                     }
                 } else {
-                    slaLogger.warn({ siteId, powerDowntime: powerDowntimeValue, hasSiteDowntime: !!siteDowntime, hasDownSince: !!(siteDowntime?.downSince) }, "power_downtime=100 but no downSince found, using fallback logic");
+                    slaLogger.warn({ 
+                        siteId, 
+                        powerDowntime: powerDowntimeValue, 
+                        hasSiteDowntime: !!siteDowntime, 
+                        hasDownSince: !!(siteDowntime?.downSince) 
+                    }, "power_downtime=100 but no downSince found, using fallback logic");
                 }
             } catch (error) {
                 slaLogger.error({ error, siteId, powerDowntime: powerDowntimeValue }, "Error fetching site downtime, using fallback logic");
@@ -1072,49 +1089,92 @@ export class SlaBaktiService {
 
     /**
      * Calculate downtime for SLA Below 95.5% section
-     * Special logic: If power_downtime = 100, use downSince to calculate actual days
-     * Returns both days (number) and display string (e.g., "120 Hari")
+     * Logic:
+     * - Jika power_downtime = 100, HARUS hitung dari downSince ke tanggal sekarang
+     *   - Jika power_downtime = 100, seharusnya downSince punya value
+     *   - Jika tidak ada downSince, log warning dan return empty string
+     * - Jika power_downtime != 100 (power_downtime < 100), hitung dari power_downtime / 24
+     * Returns both days (number) and display string (e.g., "120 Hari" or empty string)
      */
-    private async calculateDowntimeForSlaBelow95(
-        siteId: string,
-        date: Date,
-        powerDowntime: number | null
-    ): Promise<{ days: number; display: string }> {
+    private calculateDowntimeForSlaBelow95(
+        powerDowntime: number | null,
+        downSince: string | null,
+        targetDate: Date
+    ): { days: number; display: string } {
         // Handle null powerDowntime
         const powerDowntimeValue = powerDowntime ?? 0;
         
-        // If power_downtime = 100 (or exactly 100), prioritize using downSince from monitoring service
-        // Use Math.abs and comparison to handle floating point precision issues
+        // Logic: Jika power_downtime = 100, HARUS hitung dari downSince ke tanggal sekarang
+        // power_downtime = 100 berarti site sudah down lebih dari 4 hari, jadi harus ada downSince
         if (Math.abs(powerDowntimeValue - 100) < 0.01 || powerDowntimeValue === 100) {
-            try {
-                slaLogger.debug({ siteId, powerDowntime: powerDowntimeValue }, "power_downtime=100 detected for SLA Below 95.5%, fetching downSince from monitoring service");
-                const siteDowntime = await siteDownService.getSiteDowntime(siteId);
-                
-                if (siteDowntime && siteDowntime.downSince) {
-                    // Calculate actual days from downSince to date
-                    const days = siteDownService.calculateDowntimeDays(siteDowntime.downSince, date);
-                    slaLogger.info({ siteId, days, downSince: siteDowntime.downSince, powerDowntime: powerDowntimeValue }, "Using downSince for SLA Below 95.5% downtime calculation (power_downtime=100)");
-                    return {
+            if (downSince) {
+                try {
+                    // Calculate actual days from downSince to targetDate
+                    const days = siteDownService.calculateDowntimeDays(downSince, targetDate);
+                    slaLogger.info({ 
+                        powerDowntime: powerDowntimeValue,
+                        downSince,
+                        targetDate: targetDate.toISOString(),
+                        targetDateFormatted: dayjs(targetDate).format("YYYY-MM-DD"),
                         days,
-                        display: `${days} Hari`,
-                    };
-                } else {
-                    slaLogger.warn({ siteId, powerDowntime: powerDowntimeValue, hasSiteDowntime: !!siteDowntime, hasDownSince: !!(siteDowntime?.downSince) }, "power_downtime=100 but no downSince found for SLA Below 95.5%, using fallback logic");
+                        calculated: `${days} Hari`
+                    }, "power_downtime=100: Using downSince for downtime calculation");
+                    
+                    if (days > 0) {
+                        return {
+                            days,
+                            display: `${days} Hari`,
+                        };
+                    } else {
+                        slaLogger.warn({ 
+                            powerDowntime: powerDowntimeValue,
+                            downSince,
+                            targetDate: targetDate.toISOString(),
+                            days 
+                        }, "power_downtime=100: Calculated days = 0, returning empty string");
+                        return { days: 0, display: "" };
+                    }
+                } catch (error) {
+                    slaLogger.error({ error, powerDowntime: powerDowntimeValue, downSince }, "Error calculating days from downSince, returning empty string");
+                    // Jika power_downtime = 100 tapi error, return empty string (tidak boleh fallback)
+                    return { days: 0, display: "" };
                 }
-            } catch (error) {
-                slaLogger.error({ error, siteId, powerDowntime: powerDowntimeValue }, "Error fetching site downtime for SLA Below 95.5%, using fallback logic");
+            } else {
+                // Jika power_downtime = 100 tapi tidak ada downSince, ini anomali
+                // Seharusnya jika power_downtime = 100, downSince harus ada value
+                // Return empty string dan log warning
+                slaLogger.warn({ 
+                    powerDowntime: powerDowntimeValue 
+                }, "⚠️ power_downtime=100 but no downSince provided - this is unexpected! Returning empty string");
+                return { days: 0, display: "" };
             }
         }
 
-        // Fallback: Use powerDowntime calculation (existing logic)
+        // Logic: Jika power_downtime != 100 (power_downtime < 100), hitung dari power_downtime / 24
+        // power_downtime < 100 berarti site down kurang dari 4 hari, jadi gunakan power_downtime / 24
         if (powerDowntimeValue === 0) {
             return { days: 0, display: "" };
         }
 
+        // Calculate days from power_downtime / 24
+        // power_downtime adalah persentase downtime dalam 24 jam
+        // power_downtime = 24 berarti 1 hari, power_downtime = 48 berarti 2 hari, dst
         const days = Math.floor(powerDowntimeValue / 24);
-        const display = days >= 4 ? "Lebih Dari 4 Hari" : days > 0 ? `${days} Hari` : "1 Hari";
 
-        return { days, display };
+        if (days >= 4) {
+            // Jika days >= 4, seharusnya power_downtime = 100, tapi jika tidak, tetap return "Lebih Dari 4 Hari"
+            // Ini bisa terjadi jika power_downtime >= 96 tapi < 100
+            slaLogger.warn({ 
+                powerDowntime: powerDowntimeValue,
+                calculatedDays: days
+            }, "⚠️ power_downtime < 100 but calculated days >= 4, returning 'Lebih Dari 4 Hari'");
+            return { days, display: "Lebih Dari 4 Hari" };
+        } else if (days > 0) {
+            return { days, display: `${days} Hari` };
+        } else {
+            // If less than 1 day (power_downtime < 24), show as "1 Hari"
+            return { days: 1, display: "1 Hari" };
+        }
     }
 
     /**
@@ -1211,6 +1271,7 @@ export class SlaBaktiService {
         const endDateObj = new Date(endDate);
 
         // 1. Get power_downtime from sla_bakti table
+        // Get the LATEST (most recent) power_downtime for each site within the date range
         const slaBaktiData = await prisma.slaBakti.findMany({
             where: {
                 date: {
@@ -1221,20 +1282,23 @@ export class SlaBaktiService {
             select: {
                 siteId: true,
                 powerDowntime: true,
+                date: true,
+            },
+            orderBy: {
+                date: 'desc', // Order by date descending to get latest first
             },
         });
 
-        // Group by siteId and get latest power_downtime
+        // Group by siteId and get the LATEST (most recent) power_downtime value for each site
         const powerDowntimeMap = new Map<string, number>();
         for (const record of slaBaktiData) {
-            const existing = powerDowntimeMap.get(record.siteId);
-            // Use the highest power_downtime value for this site
-            if (!existing || (record.powerDowntime && record.powerDowntime > existing)) {
+            // Only set if not already set (since we ordered by date desc, first occurrence is latest)
+            if (!powerDowntimeMap.has(record.siteId)) {
                 powerDowntimeMap.set(record.siteId, record.powerDowntime || 0);
             }
         }
 
-        // 2. Get site-down data from monitoring service
+        // 2. Get site-down data from monitoring service (downSince)
         // This will fetch from /api/v1/monitoring/site-down/?page=1&limit=100
         slaLogger.debug({ startDate, endDate, masterSitesCount: masterSites.length }, "Fetching site downtime data from monitoring service for SLA Below 95.5%");
         const allSiteDowntime = await siteDownService.fetchAllSiteDowntime();
@@ -1242,6 +1306,14 @@ export class SlaBaktiService {
             siteDownCount: allSiteDowntime.size,
             sampleSiteIds: Array.from(allSiteDowntime.keys()).slice(0, 5)
         }, "Site downtime data fetched from monitoring service");
+
+        // Create map of siteId -> downSince for quick lookup
+        const downSinceMap = new Map<string, string>();
+        for (const [siteId, downtimeData] of allSiteDowntime.entries()) {
+            if (downtimeData.downSince) {
+                downSinceMap.set(siteId, downtimeData.downSince);
+            }
+        }
 
         // 3. Get site details for battery version mapping
         let siteDetailsMap: Map<string, any>;
@@ -1252,19 +1324,56 @@ export class SlaBaktiService {
             siteDetailsMap = new Map();
         }
 
-        // 4. Map all data together
+        // 4. Map all data together: combine sla_bakti (power_downtime) + monitoring service (downSince)
         const mappedSites: MappedSlaBelow95Site[] = [];
 
         for (const masterSite of masterSites) {
             const siteId = masterSite.siteId;
+            const siteName = masterSite.siteName;
+            
+            // Get power_downtime from sla_bakti table
             const powerDowntime = powerDowntimeMap.get(siteId) || 0;
             
-            // Calculate downtime using special logic for SLA Below 95.5%
-            const downtimeResult = await this.calculateDowntimeForSlaBelow95(
-                siteId,
-                endDateObj,
-                powerDowntime
+            // Get downSince from monitoring service
+            const downSince = downSinceMap.get(siteId) || null;
+            
+            // Calculate downtime based on logic:
+            // - Jika power_downtime = 100, hitung dari downSince ke tanggal sekarang
+            // - Jika power_downtime != 100 (power_downtime < 100), hitung dari power_downtime / 24
+            const downtimeResult = this.calculateDowntimeForSlaBelow95(
+                powerDowntime,
+                downSince,
+                endDateObj
             );
+            
+            // Log detailed information for debugging
+            const calculationSource = powerDowntime === 100 
+                ? (downSince ? `power_downtime=100, using downSince=${downSince}` : `power_downtime=100, no downSince (anomaly)`)
+                : `power_downtime=${powerDowntime} / 24 = ${Math.floor(powerDowntime / 24)} days`;
+            
+            if (downtimeResult.display === "Lebih Dari 4 Hari") {
+                slaLogger.warn({ 
+                    siteId, 
+                    siteName, 
+                    powerDowntime, 
+                    hasDownSince: !!downSince,
+                    downSince,
+                    calculatedDays: downtimeResult.days,
+                    display: downtimeResult.display,
+                    calculationSource
+                }, "⚠️ Site with 'Lebih Dari 4 Hari' downtime - check calculation source");
+            } else {
+                slaLogger.debug({ 
+                    siteId, 
+                    siteName, 
+                    powerDowntime, 
+                    hasDownSince: !!downSince,
+                    downSince,
+                    calculatedDays: downtimeResult.days,
+                    display: downtimeResult.display,
+                    calculationSource
+                }, "Combined data from sla_bakti and monitoring service");
+            }
 
             // Get latest problem
             const problem = await this.getLatestProblemForSite(siteId, endDateObj);
@@ -1281,7 +1390,7 @@ export class SlaBaktiService {
 
             mappedSites.push({
                 siteId,
-                siteName: masterSite.siteName,
+                siteName,
                 slaAverage: masterSite.siteSla.slaAverage,
                 downtimeDays: downtimeResult.days,
                 downtimeDisplay: downtimeResult.display,
@@ -1317,6 +1426,9 @@ export class SlaBaktiService {
                     versionMap.set(site.batteryVersion, []);
                 }
                 
+                // Calculate statusSP: SLA < 75 = "Potensi SP", else "Clear SP"
+                const statusSP: "Potensi SP" | "Clear SP" = site.slaAverage < 75 ? "Potensi SP" : "Clear SP";
+                
                 // Format site object according to requirement
                 const formattedSite: SlaBaktiTypes.SlaBelow95SiteOutput = {
                     sla: site.slaAverage,
@@ -1324,6 +1436,7 @@ export class SlaBaktiService {
                     downtime: site.downtimeDisplay,
                     problem: site.problem,
                     batteryVersion: site.batteryVersion,  // Always present, not null
+                    statusSP: statusSP,  // "Potensi SP" if SLA < 75, else "Clear SP"
                 };
                 
                 versionMap.get(site.batteryVersion)!.push(formattedSite);
