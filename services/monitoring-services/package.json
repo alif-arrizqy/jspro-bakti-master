@@ -7,11 +7,11 @@
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "prisma:generate": "cross-env PRISMA_SCHEMA=prisma/site-down-db/schema.prisma PRISMA_DATABASE_URL=$SITE_DOWN_DATABASE_URL npx prisma generate --schema=prisma/site-down-db/schema.prisma",
-    "prisma:push": "cross-env PRISMA_SCHEMA=prisma/site-down-db/schema.prisma PRISMA_DATABASE_URL=$SITE_DOWN_DATABASE_URL npx prisma db push --schema=prisma/site-down-db/schema.prisma",
-    "prisma:migrate": "cross-env PRISMA_SCHEMA=prisma/site-down-db/schema.prisma PRISMA_DATABASE_URL=$SITE_DOWN_DATABASE_URL npx prisma migrate dev --schema=prisma/site-down-db/schema.prisma",
-    "prisma:deploy": "cross-env PRISMA_SCHEMA=prisma/site-down-db/schema.prisma PRISMA_DATABASE_URL=$SITE_DOWN_DATABASE_URL npx prisma migrate deploy --schema=prisma/site-down-db/schema.prisma",
-    "prisma:studio": "cross-env PRISMA_SCHEMA=prisma/site-down-db/schema.prisma PRISMA_DATABASE_URL=$SITE_DOWN_DATABASE_URL npx prisma studio --schema=prisma/site-down-db/schema.prisma"
+    "prisma:generate": "cross-env PRISMA_SCHEMA=prisma/monitoring-db/schema.prisma PRISMA_DATABASE_URL=$MONITORING_DATABASE_URL npx prisma generate --schema=prisma/monitoring-db/schema.prisma",
+    "prisma:push": "cross-env PRISMA_SCHEMA=prisma/monitoring-db/schema.prisma PRISMA_DATABASE_URL=$MONITORING_DATABASE_URL npx prisma db push --schema=prisma/monitoring-db/schema.prisma",
+    "prisma:migrate": "cross-env PRISMA_SCHEMA=prisma/monitoring-db/schema.prisma PRISMA_DATABASE_URL=$MONITORING_DATABASE_URL npx prisma migrate dev --schema=prisma/monitoring-db/schema.prisma",
+    "prisma:deploy": "cross-env PRISMA_SCHEMA=prisma/monitoring-db/schema.prisma PRISMA_DATABASE_URL=$MONITORING_DATABASE_URL npx prisma migrate deploy --schema=prisma/monitoring-db/schema.prisma",
+    "prisma:studio": "cross-env PRISMA_SCHEMA=prisma/monitoring-db/schema.prisma PRISMA_DATABASE_URL=$MONITORING_DATABASE_URL npx prisma studio --schema=prisma/monitoring-db/schema.prisma"
   },
   "keywords": [
     "monitoring",

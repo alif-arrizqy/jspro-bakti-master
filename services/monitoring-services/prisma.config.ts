@@ -32,22 +32,16 @@ const getDatabaseUrl = (): string => {
         // PRISMA_SCHEMA not set, continue
     }
     
-    if (schemaEnv.includes("site-down-db") || schemaEnv.includes("site_down_db")) {
+    if (schemaEnv.includes("monitoring-db") || schemaEnv.includes("monitoring_db")) {
         try {
-            return env("SITE_DOWN_DATABASE_URL");
+            // Try MONITORING_DATABASE_URL
+            return env("MONITORING_DATABASE_URL");
         } catch {
-            throw new Error("SITE_DOWN_DATABASE_URL must be set in .env file");
+            throw new Error("MONITORING_DATABASE_URL must be set in .env file");
         }
     }
 
-    // Priority 4: Fallback to schema-specific env var (default to site-down-db)
-    try {
-        return env("SITE_DOWN_DATABASE_URL");
-    } catch {
-        throw new Error(
-            "PRISMA_DATABASE_URL, DATABASE_URL, or SITE_DOWN_DATABASE_URL must be set in .env file."
-        );
-    }
+    throw new Error("PRISMA_DATABASE_URL, DATABASE_URL, or MONITORING_DATABASE_URL must be set in .env file.");
 };
 
 const getSchemaPath = (): string => {
@@ -61,8 +55,8 @@ const getSchemaPath = (): string => {
         // PRISMA_SCHEMA not set, continue
     }
 
-    // Priority 2: Default to site-down-db schema
-    return "prisma/site-down-db/schema.prisma";
+    // Priority 2: Default to monitoring-db schema (contains both site-down and site-up)
+    return "prisma/monitoring-db/schema.prisma";
 };
 
 export default defineConfig({
