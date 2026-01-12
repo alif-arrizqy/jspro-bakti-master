@@ -219,6 +219,7 @@ export interface SlaBelow95SiteOutput {
     downtime: string;               // downtimeDisplay renamed to downtime
     problem: string | null;
     batteryVersion: "talis5" | "mix" | "jspro";  // Always present, not null
+    statusSP: "Potensi SP" | "Clear SP";  // Status SP based on SLA < 75
 }
 
 // Battery version detail for SLA Below 95.5% section
