@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { config } from "../config/env";
 import { nmsLogger } from "../utils/logger";
 import type { NmsLoginResponse, NmsRefreshResponse, NmsSiteDownItem, NmsSiteDownResponse } from "../types/site-down.types";
+import type { NmsSiteUpItem, NmsSiteUpResponse } from "../types/site-up.types";
 
 export class NmsApiService {
     private refreshToken: string | null = null;
@@ -114,19 +115,21 @@ export class NmsApiService {
     }
 
     /**
-     * Fetch site down data from NMS API
+     * Fetch site data from NMS API based on status
+     * @param siteStatus - "up" or "down" to filter sites by status
+     * @returns Array of site items from NMS API (NmsSiteDownItem[] for "down", NmsSiteUpItem[] for "up")
      */
-    async fetchSiteDownData(): Promise<NmsSiteDownItem[]> {
+    async fetchSiteData(siteStatus: "up" | "down"): Promise<NmsSiteDownItem[] | NmsSiteUpItem[]> {
         try {
             const accessToken = await this.getAccessToken();
 
-            const response = await axios.get<NmsSiteDownResponse>(
+            const response = await axios.get<NmsSiteDownResponse | NmsSiteUpResponse>(
                 `${config.nms.apiUrl}/inventory/site`,
                 {
                     params: {
-                        limit: "100",
+                        limit: "130",
                         include_exclusions: "false",
-                        site_status: "down",
+                        site_status: siteStatus,
                         avg_traffic_bts_lt: "1000000",
                         avg_traffic_modem_lt: "1000000",
                     },
@@ -140,8 +143,8 @@ export class NmsApiService {
             // Response structure: { message: "Success", total: null, result: [...] }
             const sites = response.data.result || [];
             
-            nmsLogger.info({ count: sites.length }, "Successfully fetched site down data from NMS");
-            return sites;
+            nmsLogger.info({ count: sites.length, siteStatus }, "Successfully fetched site data from NMS");
+            return sites as NmsSiteDownItem[] | NmsSiteUpItem[];
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const axiosError = error as AxiosError;
@@ -150,14 +153,16 @@ export class NmsApiService {
                     : axiosError.message;
                 nmsLogger.error({ 
                     error: errorMessage, 
-                    status: axiosError.response?.status 
-                }, "Failed to fetch site down data from NMS");
-                throw new Error(`NMS fetch site down failed: ${axiosError.response?.status || 'Unknown'} ${errorMessage}`);
+                    status: axiosError.response?.status,
+                    siteStatus 
+                }, "Failed to fetch site data from NMS");
+                throw new Error(`NMS fetch site ${siteStatus} failed: ${axiosError.response?.status || 'Unknown'} ${errorMessage}`);
             }
-            nmsLogger.error({ error }, "Failed to fetch site down data from NMS");
+            nmsLogger.error({ error, siteStatus }, "Failed to fetch site data from NMS");
             throw error;
         }
     }
+
 }
 
 // Export singleton instance

@@ -1,15 +1,15 @@
 import { databaseService } from "./database.service";
 import { nmsApiService } from "./nms-api.service";
 import { sitesService } from "./sites.service";
-import { siteDownLogger } from "../utils/logger";
-import type * as SiteDownTypes from "../types/site-down.types";
+import { siteUpLogger } from "../utils/logger";
+import type * as SiteUpTypes from "../types/site-up.types";
 import type { PaginatedResponse } from "../types/common.types";
 
-export class SiteDownService {
+export class SiteUpService {
     /**
-     * Get all site downtime data with pagination
+     * Get all site up data with pagination
      */
-    async getAll(params: SiteDownTypes.SiteDowntimeQueryParams): Promise<PaginatedResponse<SiteDownTypes.SiteDowntimeResponse>> {
+    async getAll(params: SiteUpTypes.SiteUpQueryParams): Promise<PaginatedResponse<SiteUpTypes.SiteUpResponse>> {
         const prisma = databaseService.getMonitoringClient();
         const page = params.page || 1;
         const limit = params.limit || 20;
@@ -22,15 +22,15 @@ export class SiteDownService {
         }
 
         const [data, total] = await Promise.all([
-            prisma.siteDowntime.findMany({
+            prisma.siteUp.findMany({
                 where,
                 skip,
                 take: limit,
                 orderBy: {
-                    downSeconds: "desc", // Sort by longest downtime first
+                    updatedAt: "desc", // Sort by most recently updated first
                 },
             }),
-            prisma.siteDowntime.count({ where }),
+            prisma.siteUp.count({ where }),
         ]);
 
         const totalPages = Math.ceil(total / limit);
@@ -40,8 +40,6 @@ export class SiteDownService {
                 id: record.id,
                 siteId: record.siteId,
                 siteName: record.siteName,
-                downSince: record.downSince.toISOString(),
-                downSeconds: record.downSeconds,
                 createdAt: record.createdAt.toISOString(),
                 updatedAt: record.updatedAt.toISOString(),
             })),
@@ -55,12 +53,12 @@ export class SiteDownService {
     }
 
     /**
-     * Get site downtime by siteId
+     * Get site up by siteId
      */
-    async getBySiteId(siteId: string): Promise<SiteDownTypes.SiteDowntimeResponse | null> {
+    async getBySiteId(siteId: string): Promise<SiteUpTypes.SiteUpResponse | null> {
         const prisma = databaseService.getMonitoringClient();
 
-        const record = await prisma.siteDowntime.findUnique({
+        const record = await prisma.siteUp.findUnique({
             where: { siteId },
         });
 
@@ -72,31 +70,25 @@ export class SiteDownService {
             id: record.id,
             siteId: record.siteId,
             siteName: record.siteName,
-            downSince: record.downSince.toISOString(),
-            downSeconds: record.downSeconds,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
         };
     }
 
     /**
-     * Create or update site downtime (upsert)
+     * Create or update site up (upsert)
      */
-    async upsert(data: SiteDownTypes.SiteDowntimeInput): Promise<SiteDownTypes.SiteDowntimeResponse> {
+    async upsert(data: SiteUpTypes.SiteUpInput): Promise<SiteUpTypes.SiteUpResponse> {
         const prisma = databaseService.getMonitoringClient();
 
-        const record = await prisma.siteDowntime.upsert({
+        const record = await prisma.siteUp.upsert({
             where: { siteId: data.siteId },
             update: {
                 siteName: data.siteName ?? undefined,
-                downSince: data.downSince,
-                downSeconds: data.downSeconds ?? undefined,
             },
             create: {
                 siteId: data.siteId,
                 siteName: data.siteName ?? null,
-                downSince: data.downSince,
-                downSeconds: data.downSeconds ?? null,
             },
         });
 
@@ -104,25 +96,21 @@ export class SiteDownService {
             id: record.id,
             siteId: record.siteId,
             siteName: record.siteName,
-            downSince: record.downSince.toISOString(),
-            downSeconds: record.downSeconds,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
         };
     }
 
     /**
-     * Update site downtime
+     * Update site up
      */
-    async update(siteId: string, data: Partial<SiteDownTypes.SiteDowntimeInput>): Promise<SiteDownTypes.SiteDowntimeResponse> {
+    async update(siteId: string, data: Partial<SiteUpTypes.SiteUpInput>): Promise<SiteUpTypes.SiteUpResponse> {
         const prisma = databaseService.getMonitoringClient();
 
         const updateData: any = {};
         if (data.siteName !== undefined) updateData.siteName = data.siteName;
-        if (data.downSince) updateData.downSince = data.downSince;
-        if (data.downSeconds !== undefined) updateData.downSeconds = data.downSeconds;
 
-        const record = await prisma.siteDowntime.update({
+        const record = await prisma.siteUp.update({
             where: { siteId },
             data: updateData,
         });
@@ -131,19 +119,17 @@ export class SiteDownService {
             id: record.id,
             siteId: record.siteId,
             siteName: record.siteName,
-            downSince: record.downSince.toISOString(),
-            downSeconds: record.downSeconds,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
         };
     }
 
     /**
-     * Delete site downtime
+     * Delete site up
      */
     async delete(siteId: string): Promise<void> {
         const prisma = databaseService.getMonitoringClient();
-        await prisma.siteDowntime.delete({
+        await prisma.siteUp.delete({
             where: { siteId },
         });
     }
@@ -164,11 +150,11 @@ export class SiteDownService {
         let skipped = 0;
 
         try {
-            siteDownLogger.info("Starting sync from NMS API");
+            siteUpLogger.info("Starting sync from NMS API");
             
             // Step 1: Fetch data from NMS API
-            const nmsData = (await nmsApiService.fetchSiteData("down")) as SiteDownTypes.NmsSiteDownItem[];
-            siteDownLogger.info({ totalFromNms: nmsData.length }, "Fetched data from NMS API");
+            const nmsData = (await nmsApiService.fetchSiteData("up")) as SiteUpTypes.NmsSiteUpItem[];
+            siteUpLogger.info({ totalFromNms: nmsData.length }, "Fetched data from NMS API");
 
             // Step 2: Process each NMS site
             for (const item of nmsData) {
@@ -183,7 +169,7 @@ export class SiteDownService {
                     // Step 4: Skip if site not found in sites-service
                     if (!mappedSiteId) {
                         skipped++;
-                        siteDownLogger.debug(
+                        siteUpLogger.debug(
                             { 
                                 nmsSiteId: item.site_id_name, 
                                 nmsTerminalId: item.terminal_id,
@@ -198,32 +184,30 @@ export class SiteDownService {
                     // Check if site exists in database (using mapped siteId)
                     const existing = await this.getBySiteId(mappedSiteId);
 
-                    const data: SiteDownTypes.SiteDowntimeInput = {
+                    const data: SiteUpTypes.SiteUpInput = {
                         siteId: mappedSiteId, // Use mapped siteId from sites-service
                         siteName: item.name,
-                        downSince: new Date(item.down_since),
-                        downSeconds: item.down_seconds,
                     };
 
                     await this.upsert(data);
 
                     if (existing) {
                         updated++;
-                        siteDownLogger.debug(
+                        siteUpLogger.debug(
                             { siteId: mappedSiteId, nmsSiteId: item.site_id_name },
-                            "Updated site downtime"
+                            "Updated site up"
                         );
                     } else {
                         inserted++;
-                        siteDownLogger.debug(
+                        siteUpLogger.debug(
                             { siteId: mappedSiteId, nmsSiteId: item.site_id_name },
-                            "Inserted new site downtime"
+                            "Inserted new site up"
                         );
                     }
 
                     // Log if mapping was applied (different from original)
                     if (mappedSiteId !== item.site_id_name) {
-                        siteDownLogger.debug(
+                        siteUpLogger.debug(
                             { 
                                 nmsSiteId: item.site_id_name, 
                                 nmsTerminalId: item.terminal_id,
@@ -234,19 +218,19 @@ export class SiteDownService {
                     }
                 } catch (error) {
                     errors++;
-                    siteDownLogger.error(
+                    siteUpLogger.error(
                         { 
                             error, 
                             nmsSiteId: item.site_id_name, 
                             nmsTerminalId: item.terminal_id,
                             siteName: item.name 
                         },
-                        "Failed to upsert site downtime"
+                        "Failed to upsert site up"
                     );
                 }
             }
 
-            siteDownLogger.info(
+            siteUpLogger.info(
                 { 
                     inserted, 
                     updated, 
@@ -259,12 +243,12 @@ export class SiteDownService {
             );
             return { inserted, updated, errors, skipped };
         } catch (error) {
-            siteDownLogger.error({ error }, "Failed to sync from NMS");
+            siteUpLogger.error({ error }, "Failed to sync from NMS");
             throw error;
         }
     }
 }
 
 // Export singleton instance
-export const siteDownService = new SiteDownService();
+export const siteUpService = new SiteUpService();
 

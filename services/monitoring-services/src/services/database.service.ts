@@ -1,20 +1,28 @@
-import { PrismaClient as SiteDownClient } from "@prisma/site-down-client";
+import { PrismaClient as MonitoringClient } from "@prisma/monitoring-client";
 import { dbLogger } from "../utils/logger";
-import { siteDownDb } from "../config/prisma";
+import { monitoringDb } from "../config/prisma";
 
 // Database Service Class
 export class DatabaseService {
-    private siteDown: SiteDownClient;
+    private monitoring: MonitoringClient;
 
     constructor() {
-        this.siteDown = siteDownDb;
+        this.monitoring = monitoringDb;
     }
 
     /**
-     * Get Site Down Database client
+     * Get Monitoring Database client
      */
-    getSiteDownClient(): SiteDownClient {
-        return this.siteDown;
+    getMonitoringClient(): MonitoringClient {
+        return this.monitoring;
+    }
+
+    /**
+     * Get Site Down Database client (deprecated - uses monitoring client)
+     * @deprecated Use getMonitoringClient() instead
+     */
+    getSiteDownClient(): MonitoringClient {
+        return this.monitoring;
     }
 
     /**
@@ -22,9 +30,9 @@ export class DatabaseService {
      */
     async connect(): Promise<void> {
         try {
-            await this.siteDown.$connect();
-            await this.siteDown.$queryRaw`SELECT 1`;
-            dbLogger.info("Connected to site_down_db");
+            await this.monitoring.$connect();
+            await this.monitoring.$queryRaw`SELECT 1`;
+            dbLogger.info("Connected to monitoring_db");
         } catch (error) {
             dbLogger.error({ error }, "Failed to connect to database");
             throw error;
@@ -35,25 +43,25 @@ export class DatabaseService {
      * Disconnect from database
      */
     async disconnect(): Promise<void> {
-        await this.siteDown.$disconnect();
-        dbLogger.info("Disconnected from site_down_db");
+        await this.monitoring.$disconnect();
+        dbLogger.info("Disconnected from monitoring_db");
     }
 
     /**
      * Health check for database
      */
-    async healthCheck(): Promise<{ siteDownDb: boolean }> {
-        let siteDownHealthy = false;
+    async healthCheck(): Promise<{ monitoringDb: boolean }> {
+        let monitoringHealthy = false;
 
         try {
-            await this.siteDown.$queryRaw`SELECT 1`;
-            siteDownHealthy = true;
+            await this.monitoring.$queryRaw`SELECT 1`;
+            monitoringHealthy = true;
         } catch (error) {
-            dbLogger.error({ error }, "site_down_db health check failed");
+            dbLogger.error({ error }, "monitoring_db health check failed");
         }
 
         return {
-            siteDownDb: siteDownHealthy,
+            monitoringDb: monitoringHealthy,
         };
     }
 }
