@@ -1,6 +1,9 @@
 import { config } from "../config/env";
 import { slaLogger } from "../utils/logger";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 export interface SiteDowntimeData {
     siteId: string;
@@ -192,12 +195,62 @@ export class SiteDownService {
 
     /**
      * Calculate downtime in days from downSince to targetDate
+     * Uses date-only comparison to avoid timezone issues
+     * Example: downSince = "2026-01-09 05:48:28.731 +0700" and targetDate = 2026-01-11
+     * Result: 2 days (from Jan 9 to Jan 11)
+     * 
+     * Calculation: targetDate - downSince in calendar days
+     * Extracts date part (YYYY-MM-DD) from both dates and calculates difference
      */
     calculateDowntimeDays(downSince: string, targetDate: Date): number {
-        const downDate = dayjs(downSince);
-        const target = dayjs(targetDate);
-        const days = target.diff(downDate, "day");
-        return Math.max(0, days);
+        try {
+            // Parse downSince (can be ISO string with timezone like "2026-01-09 05:48:28.731 +0700")
+            // dayjs will parse the date correctly, preserving the date part
+            const downDate = dayjs(downSince);
+            // Parse targetDate (Date object)
+            const target = dayjs(targetDate);
+            
+            // Extract date only (YYYY-MM-DD) from the original date strings
+            // This preserves the calendar date regardless of timezone
+            // For downSince: extract date part from the original string if possible, otherwise use parsed date
+            let downDateOnly: string;
+            if (downSince.includes("T") || downSince.includes(" ")) {
+                // If it's an ISO string, extract date part before space or T
+                const datePart = downSince.split(/[T ]/)[0];
+                downDateOnly = datePart; // Should be "YYYY-MM-DD"
+            } else {
+                downDateOnly = downDate.format("YYYY-MM-DD");
+            }
+            
+            // For targetDate, use formatted date
+            const targetDateOnly = target.format("YYYY-MM-DD");
+            
+            // Parse as date-only strings to ensure consistent calculation
+            // Use strict parsing to avoid timezone issues
+            const downDateParsed = dayjs(downDateOnly, "YYYY-MM-DD", true);
+            const targetDateParsed = dayjs(targetDateOnly, "YYYY-MM-DD", true);
+            
+            // Calculate difference in days
+            // diff returns the number of full days between the two dates
+            const days = targetDateParsed.diff(downDateParsed, "day");
+            
+            slaLogger.info({ 
+                downSince, 
+                downDateOriginal: downDate.format("YYYY-MM-DD HH:mm:ss Z"),
+                downDateOnly,
+                downDateParsed: downDateParsed.format("YYYY-MM-DD"),
+                targetDateOriginal: target.format("YYYY-MM-DD HH:mm:ss Z"),
+                targetDateOnly,
+                targetDateParsed: targetDateParsed.format("YYYY-MM-DD"),
+                calculatedDays: days
+            }, "Calculating downtime days from downSince to targetDate");
+            
+            const result = Math.max(0, days);
+            return result;
+        } catch (error) {
+            slaLogger.error({ error, downSince, targetDate: targetDate.toISOString() }, "Error calculating downtime days");
+            return 0;
+        }
     }
 }
 
