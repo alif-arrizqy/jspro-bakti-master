@@ -2,11 +2,25 @@ import dayjs from "dayjs";
 import { databaseService } from "./database.service";
 import { sitesService } from "./sites.service";
 import { cacheService, CacheService } from "./cache.service";
+import { siteDownService } from "./site-down.service";
 import { slaLogger } from "../utils/logger";
 import { parseSlaBaktiExcel, ParsedSlaBaktiRow } from "../utils/excel.util";
 import type * as SlaBaktiTypes from "../types/sla-bakti.types";
 
 import type { PaginatedResponse } from "../types/common.types";
+
+/**
+ * Internal interface for mapped site data before formatting to output
+ */
+interface MappedSlaBelow95Site {
+    siteId: string;
+    siteName: string;
+    slaAverage: number;
+    downtimeDays: number;
+    downtimeDisplay: string;
+    problem: string | null;
+    batteryVersion: "talis5" | "mix" | "jspro" | null;
+}
 
 export class SlaBaktiService {
     /**
@@ -1005,22 +1019,372 @@ export class SlaBaktiService {
         return { startDate, endDate: problemEndDate };
     }
 
-    private calculateDowntime(powerDowntime: number): string {
-        if (powerDowntime === 0) return "";
+    /**
+     * Calculate downtime string for Laporan Ringkas section
+     * Special logic: If power_downtime = 100, use downSince to calculate actual days
+     * Otherwise, use existing powerDowntime logic
+     */
+    private async calculateDowntime(siteId: string, date: Date, powerDowntime: number | null): Promise<string> {
+        // Handle null powerDowntime
+        const powerDowntimeValue = powerDowntime ?? 0;
+        
+        // If power_downtime = 100 (or exactly 100), prioritize using downSince from monitoring service
+        // Use Math.abs and comparison to handle floating point precision issues
+        if (Math.abs(powerDowntimeValue - 100) < 0.01 || powerDowntimeValue === 100) {
+            try {
+                slaLogger.info({ siteId, powerDowntime: powerDowntimeValue }, "power_downtime=100 detected, fetching downSince from monitoring service");
+                const siteDowntime = await siteDownService.getSiteDowntime(siteId);
+                
+                if (siteDowntime && siteDowntime.downSince) {
+                    // Calculate actual days from downSince to date
+                    const days = siteDownService.calculateDowntimeDays(siteDowntime.downSince, date);
+                    // Return actual days, not "Lebih Dari 4 Hari"
+                    if (days > 0) {
+                        slaLogger.info({ siteId, days, downSince: siteDowntime.downSince, powerDowntime: powerDowntimeValue }, "Using downSince for downtime calculation (power_downtime=100)");
+                        return `${days} Hari`;
+                    } else {
+                        return "Kurang dari 1 Hari";
+                    }
+                } else {
+                    slaLogger.warn({ siteId, powerDowntime: powerDowntimeValue, hasSiteDowntime: !!siteDowntime, hasDownSince: !!(siteDowntime?.downSince) }, "power_downtime=100 but no downSince found, using fallback logic");
+                }
+            } catch (error) {
+                slaLogger.error({ error, siteId, powerDowntime: powerDowntimeValue }, "Error fetching site downtime, using fallback logic");
+            }
+        }
 
-        const days = Math.floor(powerDowntime / 24);
-        const hours = Math.floor(powerDowntime % 24);
-        const minutes = Math.floor((powerDowntime % 1) * 60);
+        // Fallback to powerDowntime (existing logic)
+        // Convert powerDowntime (percentage) to days
+        // powerDowntime = 100 means 4 days (100% = 4 days)
+        if (powerDowntimeValue === 0) return "";
+
+        const days = Math.floor(powerDowntimeValue / 24);
 
         if (days >= 4) {
             return "Lebih Dari 4 Hari";
         } else if (days > 0) {
             return `${days} Hari`;
-        } else if (hours > 0) {
-            return `${hours} jam ${minutes} menit`;
         } else {
-            return `${minutes} menit`;
+            // If less than 1 day, still show as "1 Hari" for consistency
+            return "1 Hari";
         }
+    }
+
+    /**
+     * Calculate downtime for SLA Below 95.5% section
+     * Special logic: If power_downtime = 100, use downSince to calculate actual days
+     * Returns both days (number) and display string (e.g., "120 Hari")
+     */
+    private async calculateDowntimeForSlaBelow95(
+        siteId: string,
+        date: Date,
+        powerDowntime: number | null
+    ): Promise<{ days: number; display: string }> {
+        // Handle null powerDowntime
+        const powerDowntimeValue = powerDowntime ?? 0;
+        
+        // If power_downtime = 100 (or exactly 100), prioritize using downSince from monitoring service
+        // Use Math.abs and comparison to handle floating point precision issues
+        if (Math.abs(powerDowntimeValue - 100) < 0.01 || powerDowntimeValue === 100) {
+            try {
+                slaLogger.debug({ siteId, powerDowntime: powerDowntimeValue }, "power_downtime=100 detected for SLA Below 95.5%, fetching downSince from monitoring service");
+                const siteDowntime = await siteDownService.getSiteDowntime(siteId);
+                
+                if (siteDowntime && siteDowntime.downSince) {
+                    // Calculate actual days from downSince to date
+                    const days = siteDownService.calculateDowntimeDays(siteDowntime.downSince, date);
+                    slaLogger.info({ siteId, days, downSince: siteDowntime.downSince, powerDowntime: powerDowntimeValue }, "Using downSince for SLA Below 95.5% downtime calculation (power_downtime=100)");
+                    return {
+                        days,
+                        display: `${days} Hari`,
+                    };
+                } else {
+                    slaLogger.warn({ siteId, powerDowntime: powerDowntimeValue, hasSiteDowntime: !!siteDowntime, hasDownSince: !!(siteDowntime?.downSince) }, "power_downtime=100 but no downSince found for SLA Below 95.5%, using fallback logic");
+                }
+            } catch (error) {
+                slaLogger.error({ error, siteId, powerDowntime: powerDowntimeValue }, "Error fetching site downtime for SLA Below 95.5%, using fallback logic");
+            }
+        }
+
+        // Fallback: Use powerDowntime calculation (existing logic)
+        if (powerDowntimeValue === 0) {
+            return { days: 0, display: "" };
+        }
+
+        const days = Math.floor(powerDowntimeValue / 24);
+        const display = days >= 4 ? "Lebih Dari 4 Hari" : days > 0 ? `${days} Hari` : "1 Hari";
+
+        return { days, display };
+    }
+
+    /**
+     * Get latest problem for a site from SLA reports
+     * Returns the latest problem from monthly range (tanggal 1 sampai akhir bulan)
+     */
+    private async getLatestProblemForSite(siteId: string, endDate: Date): Promise<string | null> {
+        const prisma = databaseService.getSlaClient();
+        
+        // Get problem date range (tanggal 1 sampai akhir bulan)
+        const problemDateRange = this.getProblemDateRange(endDate);
+        
+        const problemReports = await (prisma.slaReport.findMany as any)({
+            where: {
+                siteId,
+                date: {
+                    gte: problemDateRange.startDate,
+                    lte: problemDateRange.endDate,
+                },
+            },
+            include: {
+                problems: {
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    take: 1,
+                },
+            },
+            orderBy: {
+                date: 'desc',
+            },
+            take: 1,
+        });
+
+        if (problemReports.length > 0 && problemReports[0].problems && problemReports[0].problems.length > 0) {
+            return problemReports[0].problems[0].problem || null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get sites with SLA < 95.5% from master endpoint
+     * This fetches data from /api/v1/sla-bakti/master with filter slaMax=95
+     * Date range: startDate = tanggal 1 bulan ini, endDate = akhir bulan ini
+     */
+    private async getSitesBelow95FromMaster(
+        requestStartDate: string,
+        requestEndDate: string
+    ): Promise<SlaBaktiTypes.SlaMasterSiteItem[]> {
+        // Calculate date range: startDate = tanggal 1 bulan ini, endDate = akhir bulan ini
+        // Based on requestEndDate to determine which month
+        const endDateObj = dayjs(requestEndDate);
+        const masterStartDate = endDateObj.startOf('month').format("YYYY-MM-DD");  // Tanggal 1 bulan ini
+        const masterEndDate = endDateObj.endOf('month').format("YYYY-MM-DD");      // Akhir bulan ini
+
+        // Call master endpoint internally with filter slaMin=0, slaMax=95
+        const masterParams: SlaBaktiTypes.SlaMasterParams = {
+            startDate: masterStartDate,
+            endDate: masterEndDate,
+            slaMin: 0,
+            slaMax: 95,  // Use 95, not 95.5
+            page: 1,
+            limit: 100, // Get all sites in one request
+        };
+
+        slaLogger.debug({ 
+            requestStartDate, 
+            requestEndDate, 
+            masterStartDate, 
+            masterEndDate,
+            slaMin: 0,
+            slaMax: 95 
+        }, "Fetching sites with SLA < 95.5% from master endpoint");
+
+        const masterResult = await this.getMaster(masterParams);
+        return masterResult.sites;
+    }
+
+    /**
+     * Map and combine data from 3 sources:
+     * 1. sla_bakti table (power_downtime, site_id)
+     * 2. master endpoint (site_id, siteName, siteSla.slaAverage)
+     * 3. site-down API (site_id, siteName, downSince, downSeconds)
+     * 
+     * Returns mapped data ready for SLA Below 95.5% section (internal format, will be formatted later)
+     */
+    private async mapDataForSlaBelow95(
+        startDate: string,
+        endDate: string,
+        masterSites: SlaBaktiTypes.SlaMasterSiteItem[]
+    ): Promise<MappedSlaBelow95Site[]> {
+        const prisma = databaseService.getSlaClient();
+        const endDateObj = new Date(endDate);
+
+        // 1. Get power_downtime from sla_bakti table
+        const slaBaktiData = await prisma.slaBakti.findMany({
+            where: {
+                date: {
+                    gte: new Date(startDate),
+                    lte: endDateObj,
+                },
+            },
+            select: {
+                siteId: true,
+                powerDowntime: true,
+            },
+        });
+
+        // Group by siteId and get latest power_downtime
+        const powerDowntimeMap = new Map<string, number>();
+        for (const record of slaBaktiData) {
+            const existing = powerDowntimeMap.get(record.siteId);
+            // Use the highest power_downtime value for this site
+            if (!existing || (record.powerDowntime && record.powerDowntime > existing)) {
+                powerDowntimeMap.set(record.siteId, record.powerDowntime || 0);
+            }
+        }
+
+        // 2. Get site-down data from monitoring service
+        // This will fetch from /api/v1/monitoring/site-down/?page=1&limit=100
+        slaLogger.debug({ startDate, endDate, masterSitesCount: masterSites.length }, "Fetching site downtime data from monitoring service for SLA Below 95.5%");
+        const allSiteDowntime = await siteDownService.fetchAllSiteDowntime();
+        slaLogger.debug({ 
+            siteDownCount: allSiteDowntime.size,
+            sampleSiteIds: Array.from(allSiteDowntime.keys()).slice(0, 5)
+        }, "Site downtime data fetched from monitoring service");
+
+        // 3. Get site details for battery version mapping
+        let siteDetailsMap: Map<string, any>;
+        try {
+            siteDetailsMap = await sitesService.getSiteDetailsCached();
+        } catch (error) {
+            slaLogger.error({ error }, "Failed to fetch site details for SLA Below 95.5%");
+            siteDetailsMap = new Map();
+        }
+
+        // 4. Map all data together
+        const mappedSites: MappedSlaBelow95Site[] = [];
+
+        for (const masterSite of masterSites) {
+            const siteId = masterSite.siteId;
+            const powerDowntime = powerDowntimeMap.get(siteId) || 0;
+            
+            // Calculate downtime using special logic for SLA Below 95.5%
+            const downtimeResult = await this.calculateDowntimeForSlaBelow95(
+                siteId,
+                endDateObj,
+                powerDowntime
+            );
+
+            // Get latest problem
+            const problem = await this.getLatestProblemForSite(siteId, endDateObj);
+
+            // Get battery version from site details
+            const siteDetail = siteDetailsMap.get(siteId);
+            let batteryVersion: "talis5" | "mix" | "jspro" | null = null;
+            if (siteDetail?.batteryVersion) {
+                const bv = siteDetail.batteryVersion.toLowerCase();
+                if (bv === "talis5") batteryVersion = "talis5";
+                else if (bv === "mix") batteryVersion = "mix";
+                else if (bv === "jspro") batteryVersion = "jspro";
+            }
+
+            mappedSites.push({
+                siteId,
+                siteName: masterSite.siteName,
+                slaAverage: masterSite.siteSla.slaAverage,
+                downtimeDays: downtimeResult.days,
+                downtimeDisplay: downtimeResult.display,
+                problem,
+                batteryVersion,
+            });
+        }
+
+        return mappedSites;
+    }
+
+    /**
+     * Get SLA Below 95.5% section data
+     * Combines data from 3 sources and groups by battery version
+     * Returns formatted structure with message, totalSites, and detail.batteryVersion object
+     */
+    private async getSlaBelow95Section(
+        startDate: string,
+        endDate: string
+    ): Promise<SlaBaktiTypes.SlaBelow95Section> {
+        // 1. Get sites with SLA < 95.5% from master endpoint
+        const masterSites = await this.getSitesBelow95FromMaster(startDate, endDate);
+
+        // 2. Map data from 3 sources
+        const mappedSites = await this.mapDataForSlaBelow95(startDate, endDate, masterSites);
+
+        // 3. Group by battery version and format site objects
+        const versionMap = new Map<"talis5" | "mix" | "jspro", SlaBaktiTypes.SlaBelow95SiteOutput[]>();
+        
+        for (const site of mappedSites) {
+            if (site.batteryVersion) {
+                if (!versionMap.has(site.batteryVersion)) {
+                    versionMap.set(site.batteryVersion, []);
+                }
+                
+                // Format site object according to requirement
+                const formattedSite: SlaBaktiTypes.SlaBelow95SiteOutput = {
+                    sla: site.slaAverage,
+                    site: site.siteName,
+                    downtime: site.downtimeDisplay,
+                    problem: site.problem,
+                    batteryVersion: site.batteryVersion,  // Always present, not null
+                };
+                
+                versionMap.get(site.batteryVersion)!.push(formattedSite);
+            }
+        }
+
+        // 4. Build response with proper structure (object, not array)
+        const versionConfig: Array<{
+            version: "talis5" | "mix" | "jspro";
+            displayName: string;
+        }> = [
+            { version: "talis5", displayName: "Talis5 Full" },
+            { version: "mix", displayName: "Talis5 Mix" },
+            { version: "jspro", displayName: "JS Pro" },
+        ];
+
+        const batteryVersionDetail: {
+            talis5: SlaBaktiTypes.SlaBelow95BatteryVersionDetail;
+            mix: SlaBaktiTypes.SlaBelow95BatteryVersionDetail;
+            jspro: SlaBaktiTypes.SlaBelow95BatteryVersionDetail;
+        } = {
+            talis5: {
+                name: "Talis5 Full",
+                totalSites: 0,
+                sites: [],
+            },
+            mix: {
+                name: "Talis5 Mix",
+                totalSites: 0,
+                sites: [],
+            },
+            jspro: {
+                name: "JS Pro",
+                totalSites: 0,
+                sites: [],
+            },
+        };
+
+        // Populate battery version details
+        for (const config of versionConfig) {
+            const sites = versionMap.get(config.version) || [];
+            // Sort sites by SLA ascending (from smallest/0% to largest)
+            const sortedSites = sites.sort((a, b) => a.sla - b.sla);
+            batteryVersionDetail[config.version] = {
+                name: config.displayName,
+                totalSites: sortedSites.length,
+                sites: sortedSites,
+            };
+        }
+
+        // Generate message
+        const endDateFormatted = dayjs(endDate).format("YYYY-MM-DD");
+        const message = `Dear team, berikut site yang memiliki SLA avg dibawah 95.5% pada tanggal ${endDateFormatted}`;
+
+        return {
+            message,
+            totalSites: mappedSites.length,
+            detail: {
+                batteryVersion: batteryVersionDetail,
+            },
+        };
     }
 
     /**
@@ -1038,307 +1402,346 @@ export class SlaBaktiService {
                 const startDate = new Date(params.startDate);
                 const endDate = new Date(params.endDate);
 
-        // Validate: endDate - startDate must be 1 day
-        const daysDiff = Math.abs(dayjs(endDate).diff(dayjs(startDate), "day"));
-        if (daysDiff !== 1) {
-            throw new Error("Daily detail report requires exactly 1 day difference between startDate and endDate");
-        }
+                // Validate: endDate - startDate must be 1 day
+                const daysDiff = Math.abs(dayjs(endDate).diff(dayjs(startDate), "day"));
+                if (daysDiff !== 1) {
+                    throw new Error("Daily detail report requires exactly 1 day difference between startDate and endDate");
+                }
 
-        // Get SLA data for both dates
-        const [dataNow, dataBefore] = await Promise.all([
-            prisma.slaBakti.findMany({
-                where: {
-                    date: endDate,
-                },
-            }),
-            prisma.slaBakti.findMany({
-                where: {
-                    date: startDate,
-                },
-            }),
-        ]);
+                // Get SLA data for both dates
+                const [dataNow, dataBefore] = await Promise.all([
+                    prisma.slaBakti.findMany({
+                        where: {
+                            date: endDate,
+                        },
+                    }),
+                    prisma.slaBakti.findMany({
+                        where: {
+                            date: startDate,
+                        },
+                    }),
+                ]);
 
-        // Get reports for problem and downtime info
-        const reports = await prisma.slaReport.findMany({
-            where: {
-                date: {
-                    gte: startDate,
-                    lte: endDate,
-                },
-            },
-            include: {
-                problems: {
-                    orderBy: {
-                        createdAt: 'desc',
+                // Get reports for problem and downtime info
+                const reports = await prisma.slaReport.findMany({
+                    where: {
+                        date: {
+                            gte: startDate,
+                            lte: endDate,
+                        },
                     },
-                    take: 1, // Get latest problem
-                },
-            },
-        });
-
-        // Get problem reports with monthly range (tanggal 1 sampai akhir bulan)
-        // Calculate problem date range: startDate = tanggal 1, endDate = akhir bulan
-        const problemDateRange = this.getProblemDateRange(endDate);
-        const problemReports = await prisma.slaReport.findMany({
-            where: {
-                date: {
-                    gte: problemDateRange.startDate,
-                    lte: problemDateRange.endDate,
-                },
-            },
-            include: {
-                problems: {
-                    orderBy: {
-                        createdAt: 'desc', // Get latest problem first
+                    include: {
+                        problems: {
+                            orderBy: {
+                                createdAt: 'desc',
+                            },
+                            take: 1, // Get latest problem
+                        },
                     },
-                    take: 1, // Only take the latest problem per report
-                },
-            },
-            orderBy: {
-                date: 'desc', // Sort by date descending to get latest first
-            },
-        });
+                });
 
-        // Create map of latest problem per siteId
-        // If a site has multiple problems in the month, take the latest one (by date and createdAt)
-        const problemMap = new Map<string, string>();
-        for (const report of problemReports) {
-            if (report.problems && report.problems.length > 0 && !problemMap.has(report.siteId)) {
-                // Only set if not already in map (since we sorted by date desc, first occurrence is latest)
-                // Get the latest problem text
-                const latestProblem = report.problems[0];
-                if (latestProblem.problem) {
-                    problemMap.set(report.siteId, latestProblem.problem);
-                }
-            }
-        }
+                // Get problem reports with monthly range (tanggal 1 sampai akhir bulan)
+                // Calculate problem date range: startDate = tanggal 1, endDate = akhir bulan
+                const problemDateRange = this.getProblemDateRange(endDate);
+                const problemReports = await prisma.slaReport.findMany({
+                    where: {
+                        date: {
+                            gte: problemDateRange.startDate,
+                            lte: problemDateRange.endDate,
+                        },
+                    },
+                    include: {
+                        problems: {
+                            orderBy: {
+                                createdAt: 'desc', // Get latest problem first
+                            },
+                            take: 1, // Only take the latest problem per report
+                        },
+                    },
+                    orderBy: {
+                        date: 'desc', // Sort by date descending to get latest first
+                    },
+                });
 
-        // Get site names mapping from sites service
-        let siteNameMap = new Map<string, string>();
-        try {
-            siteNameMap = await sitesService.getSiteIdToNameMapCached();
-            // Fallback: if siteName not found, use siteId
-            const allSiteIds = new Set<string>();
-            dataNow.forEach((d) => {
-                allSiteIds.add(d.siteId);
-                if (!siteNameMap.has(d.siteId)) {
-                    siteNameMap.set(d.siteId, d.siteId);
-                }
-            });
-            dataBefore.forEach((d) => {
-                allSiteIds.add(d.siteId);
-                if (!siteNameMap.has(d.siteId)) {
-                    siteNameMap.set(d.siteId, d.siteId);
-                }
-            });
-        } catch (error) {
-            slaLogger.error({ error }, "Failed to fetch site names, using siteId as fallback");
-            // If failed, use siteId as siteName
-            dataNow.forEach((d) => siteNameMap.set(d.siteId, d.siteId));
-            dataBefore.forEach((d) => siteNameMap.set(d.siteId, d.siteId));
-        }
-
-        // Create report map by siteId and date
-        const reportMap = new Map<string, any>();
-        for (const report of reports) {
-            const key = `${report.siteId}-${dayjs(report.date).format("YYYY-MM-DD")}`;
-            reportMap.set(key, report);
-        }
-
-        // Calculate overall summary
-        const totalSites = new Set(dataNow.map((d) => d.siteId)).size;
-        const validSlaNow = dataNow.filter((d) => d.sla !== null && d.sla !== undefined);
-        const slaNow =
-            validSlaNow.length > 0 ? validSlaNow.reduce((sum, d) => sum + (d.sla || 0), 0) / validSlaNow.length : 0;
-
-        const validSlaBefore = dataBefore.filter((d) => d.sla !== null && d.sla !== undefined);
-        const slaBefore =
-            validSlaBefore.length > 0
-                ? validSlaBefore.reduce((sum, d) => sum + (d.sla || 0), 0) / validSlaBefore.length
-                : 0;
-
-        const slaDiff = slaNow - slaBefore;
-        const summaryMessage = `Dear team, berikut SLA Sundaya (${totalSites} Site) pada tanggal ${params.endDate} Terdapat ${slaDiff >= 0 ? "kenaikan" : "penurunan"} sebesar ${Math.abs(slaDiff).toFixed(2)} % dari periode sebelumnya`;
-
-        // Group by battery version
-        const batteryVersions: ("talis5" | "mix" | "jspro")[] = ["talis5", "mix", "jspro"];
-        const batteryVersionData: Record<string, any> = {};
-
-        for (const version of batteryVersions) {
-            try {
-                const siteIds = await sitesService.getSiteIdsByBatteryVersion(version);
-                const versionSiteIds = Array.from(siteIds);
-
-                const versionDataNow = dataNow.filter((d) => versionSiteIds.includes(d.siteId));
-                const versionDataBefore = dataBefore.filter((d) => versionSiteIds.includes(d.siteId));
-
-                const versionSites = new Set(versionDataNow.map((d) => d.siteId));
-                const validVersionSlaNow = versionDataNow.filter((d) => d.sla !== null && d.sla !== undefined);
-                const versionAvgSlaNow =
-                    validVersionSlaNow.length > 0
-                        ? validVersionSlaNow.reduce((sum, d) => sum + (d.sla || 0), 0) / validVersionSlaNow.length
-                        : 0;
-                const validVersionSlaBefore = versionDataBefore.filter((d) => d.sla !== null && d.sla !== undefined);
-                const versionAvgSlaBefore =
-                    validVersionSlaBefore.length > 0
-                        ? validVersionSlaBefore.reduce((sum, d) => sum + (d.sla || 0), 0) / validVersionSlaBefore.length
-                        : 0;
-                const versionSlaDiff = versionAvgSlaNow - versionAvgSlaBefore;
-
-                const versionNames: Record<string, string> = {
-                    talis5: "Talis5 Full",
-                    mix: "Talis5 Mix",
-                    jspro: "JSPro",
-                };
-
-                const versionMessage = `Sundaya ${versionNames[version]} (${versionSites.size} Site) pada tanggal ${dayjs(params.endDate).format("DD/MM/YYYY")} Terdapat ${versionSlaDiff >= 0 ? "kenaikan" : "penurunan"} sebesar ${Math.abs(versionSlaDiff).toFixed(2)} %`;
-
-                // Categorize sites
-                const downSla: any[] = [];
-                const underSla: any[] = [];
-                const dropSla: any[] = [];
-                const upSla: any[] = [];
-
-                for (const record of versionDataNow) {
-                    const reportKey = `${record.siteId}-${params.endDate}`;
-                    const report = reportMap.get(reportKey);
-                    // Get problem from monthly range first (latest problem), fallback to report problem (1 day range)
-                    const problemFromMonthlyRange = problemMap.get(record.siteId) || "";
-                    // Get problem from report (1 day range) - from problems relation
-                    const problemFromReport = report?.problems && report.problems.length > 0 
-                        ? report.problems[0].problem || "" 
-                        : "";
-                    const problem = problemFromMonthlyRange || problemFromReport;
-                    const downtime = this.calculateDowntime(record.powerDowntime || 0);
-                    const siteName = siteNameMap.get(record.siteId) || record.siteId;
-
-                    const prevRecord = versionDataBefore.find((d) => d.siteId === record.siteId);
-
-                    if (record.sla === null || record.sla === 0) {
-                        if (prevRecord && (prevRecord.sla === null || prevRecord.sla === 0)) {
-                            downSla.push({
-                                date: params.endDate,
-                                sla: 0,
-                                slaUnit: "%",
-                                downtime,
-                                problem,
-                                site: siteName,
-                                battery_version: version,
-                            });
+                // Create map of latest problem per siteId
+                // If a site has multiple problems in the month, take the latest one (by date and createdAt)
+                const problemMap = new Map<string, string>();
+                for (const report of problemReports) {
+                    if (report.problems && report.problems.length > 0 && !problemMap.has(report.siteId)) {
+                        // Only set if not already in map (since we sorted by date desc, first occurrence is latest)
+                        // Get the latest problem text
+                        const latestProblem = report.problems[0];
+                        if (latestProblem.problem) {
+                            problemMap.set(report.siteId, latestProblem.problem);
                         }
-                    } else if (record.sla < 95) {
-                        if (prevRecord && (prevRecord.sla === null || prevRecord.sla === 0 || prevRecord.sla < 95)) {
-                            if (prevRecord.sla === null || prevRecord.sla === 0) {
-                                downSla.push({
-                                    date: params.endDate,
-                                    sla: Number(record.sla.toFixed(2)),
-                                    slaUnit: "%",
-                                    downtime,
-                                    problem,
-                                    site: siteName,
-                                    battery_version: version,
-                                });
-                            } else {
-                                underSla.push({
-                                    date: params.endDate,
-                                    sla: Number(record.sla.toFixed(2)),
-                                    slaUnit: "%",
-                                    downtime,
-                                    problem,
-                                    site: siteName,
-                                    battery_version: version,
-                                });
+                    }
+                }
+
+                // Get site names mapping from sites service
+                let siteNameMap = new Map<string, string>();
+                try {
+                    siteNameMap = await sitesService.getSiteIdToNameMapCached();
+                    // Fallback: if siteName not found, use siteId
+                    const allSiteIds = new Set<string>();
+                    dataNow.forEach((d) => {
+                        allSiteIds.add(d.siteId);
+                        if (!siteNameMap.has(d.siteId)) {
+                            siteNameMap.set(d.siteId, d.siteId);
+                        }
+                    });
+                    dataBefore.forEach((d) => {
+                        allSiteIds.add(d.siteId);
+                        if (!siteNameMap.has(d.siteId)) {
+                            siteNameMap.set(d.siteId, d.siteId);
+                        }
+                    });
+                } catch (error) {
+                    slaLogger.error({ error }, "Failed to fetch site names, using siteId as fallback");
+                    // If failed, use siteId as siteName
+                    dataNow.forEach((d) => siteNameMap.set(d.siteId, d.siteId));
+                    dataBefore.forEach((d) => siteNameMap.set(d.siteId, d.siteId));
+                }
+
+                // Create report map by siteId and date
+                const reportMap = new Map<string, any>();
+                for (const report of reports) {
+                    const key = `${report.siteId}-${dayjs(report.date).format("YYYY-MM-DD")}`;
+                    reportMap.set(key, report);
+                }
+
+                // Calculate overall summary
+                const totalSites = new Set(dataNow.map((d) => d.siteId)).size;
+                const validSlaNow = dataNow.filter((d) => d.sla !== null && d.sla !== undefined);
+                const slaNow =
+                    validSlaNow.length > 0 ? validSlaNow.reduce((sum, d) => sum + (d.sla || 0), 0) / validSlaNow.length : 0;
+
+                const validSlaBefore = dataBefore.filter((d) => d.sla !== null && d.sla !== undefined);
+                const slaBefore =
+                    validSlaBefore.length > 0
+                        ? validSlaBefore.reduce((sum, d) => sum + (d.sla || 0), 0) / validSlaBefore.length
+                        : 0;
+
+                const slaDiff = slaNow - slaBefore;
+                const summaryMessage = `Dear team, berikut SLA Sundaya (${totalSites} Site) pada tanggal ${params.endDate} Terdapat ${slaDiff >= 0 ? "kenaikan" : "penurunan"} sebesar ${Math.abs(slaDiff).toFixed(2)} % dari periode sebelumnya`;
+
+                // Group by battery version
+                const batteryVersions: ("talis5" | "mix" | "jspro")[] = ["talis5", "mix", "jspro"];
+                const batteryVersionData: Record<string, any> = {};
+
+                for (const version of batteryVersions) {
+                    try {
+                        const siteIds = await sitesService.getSiteIdsByBatteryVersion(version);
+                        const versionSiteIds = Array.from(siteIds);
+
+                        const versionDataNow = dataNow.filter((d) => versionSiteIds.includes(d.siteId));
+                        const versionDataBefore = dataBefore.filter((d) => versionSiteIds.includes(d.siteId));
+
+                        const versionSites = new Set(versionDataNow.map((d) => d.siteId));
+                        const validVersionSlaNow = versionDataNow.filter((d) => d.sla !== null && d.sla !== undefined);
+                        const versionAvgSlaNow =
+                            validVersionSlaNow.length > 0
+                                ? validVersionSlaNow.reduce((sum, d) => sum + (d.sla || 0), 0) / validVersionSlaNow.length
+                                : 0;
+                        const validVersionSlaBefore = versionDataBefore.filter((d) => d.sla !== null && d.sla !== undefined);
+                        const versionAvgSlaBefore =
+                            validVersionSlaBefore.length > 0
+                                ? validVersionSlaBefore.reduce((sum, d) => sum + (d.sla || 0), 0) / validVersionSlaBefore.length
+                                : 0;
+                        const versionSlaDiff = versionAvgSlaNow - versionAvgSlaBefore;
+
+                        const versionNames: Record<string, string> = {
+                            talis5: "Talis5 Full",
+                            mix: "Talis5 Mix",
+                            jspro: "JSPro",
+                        };
+
+                        const versionMessage = `Sundaya ${versionNames[version]} (${versionSites.size} Site) pada tanggal ${dayjs(params.endDate).format("DD/MM/YYYY")} Terdapat ${versionSlaDiff >= 0 ? "kenaikan" : "penurunan"} sebesar ${Math.abs(versionSlaDiff).toFixed(2)} %`;
+
+                        // Categorize sites
+                        const downSla: any[] = [];
+                        const underSla: any[] = [];
+                        const dropSla: any[] = [];
+                        const upSla: any[] = [];
+
+                        for (const record of versionDataNow) {
+                            const reportKey = `${record.siteId}-${params.endDate}`;
+                            const report = reportMap.get(reportKey);
+                            // Get problem from monthly range first (latest problem), fallback to report problem (1 day range)
+                            const problemFromMonthlyRange = problemMap.get(record.siteId) || "";
+                            // Get problem from report (1 day range) - from problems relation
+                            const problemFromReport = report?.problems && report.problems.length > 0 
+                                ? report.problems[0].problem || "" 
+                                : "";
+                            const problem = problemFromMonthlyRange || problemFromReport;
+                            const downtime = await this.calculateDowntime(record.siteId, new Date(params.endDate), record.powerDowntime);
+                            const siteName = siteNameMap.get(record.siteId) || record.siteId;
+
+                            const prevRecord = versionDataBefore.find((d) => d.siteId === record.siteId);
+
+                            if (record.sla === null || record.sla === 0) {
+                                if (prevRecord && (prevRecord.sla === null || prevRecord.sla === 0)) {
+                                    downSla.push({
+                                        date: params.endDate,
+                                        sla: 0,
+                                        slaUnit: "%",
+                                        downtime,
+                                        problem,
+                                        site: siteName,
+                                        batteryVersion: version,
+                                    });
+                                }
+                            // Updated: Filter for SLA < 95.5% instead of Potensi SP (SLA < 75)
+                            } else if (record.sla !== null && record.sla < 95.5) {
+                                if (prevRecord && (prevRecord.sla === null || prevRecord.sla === 0 || (prevRecord.sla !== null && prevRecord.sla < 95.5))) {
+                                    if (prevRecord.sla === null || prevRecord.sla === 0) {
+                                        downSla.push({
+                                            date: params.endDate,
+                                            sla: Number(record.sla.toFixed(2)),
+                                            slaUnit: "%",
+                                            downtime,
+                                            problem,
+                                            site: siteName,
+                                            batteryVersion: version,
+                                        });
+                                    } else {
+                                        underSla.push({
+                                            date: params.endDate,
+                                            sla: Number(record.sla.toFixed(2)),
+                                            slaUnit: "%",
+                                            downtime,
+                                            problem,
+                                            site: siteName,
+                                            batteryVersion: version,
+                                        });
+                                    }
+                                } else {
+                                    underSla.push({
+                                        date: params.endDate,
+                                        sla: Number(record.sla.toFixed(2)),
+                                        slaUnit: "%",
+                                        downtime,
+                                        problem,
+                                        site: siteName,
+                                        batteryVersion: version,
+                                    });
+                                }
                             }
-                        } else {
-                            underSla.push({
-                                date: params.endDate,
-                                sla: Number(record.sla.toFixed(2)),
-                                slaUnit: "%",
-                                downtime,
-                                problem,
-                                site: siteName,
-                                battery_version: version,
-                            });
-                        }
-                    }
 
-                    if (prevRecord && prevRecord.sla !== null && record.sla !== null) {
-                        if (record.sla < prevRecord.sla) {
-                            dropSla.push({
-                                date: params.endDate,
-                                slaBefore: Number(prevRecord.sla.toFixed(2)),
-                                slaNow: Number(record.sla.toFixed(2)),
-                                slaUnit: "%",
-                                downtime,
-                                problem,
-                                site: siteName,
-                                battery_version: version,
-                            });
-                        } else if (record.sla > prevRecord.sla) {
-                            upSla.push({
-                                date: params.endDate,
-                                slaBefore: Number(prevRecord.sla.toFixed(2)),
-                                slaNow: Number(record.sla.toFixed(2)),
-                                slaUnit: "%",
-                                downtime: "",
-                                problem: "",
-                                site: siteName,
-                                battery_version: version,
-                            });
+                            if (prevRecord && prevRecord.sla !== null && record.sla !== null) {
+                                if (record.sla < prevRecord.sla) {
+                                    dropSla.push({
+                                        date: params.endDate,
+                                        slaBefore: Number(prevRecord.sla.toFixed(2)),
+                                        slaNow: Number(record.sla.toFixed(2)),
+                                        slaUnit: "%",
+                                        downtime,
+                                        problem,
+                                        site: siteName,
+                                        batteryVersion: version,
+                                    });
+                                } else if (record.sla > prevRecord.sla) {
+                                    upSla.push({
+                                        date: params.endDate,
+                                        slaBefore: Number(prevRecord.sla.toFixed(2)),
+                                        slaNow: Number(record.sla.toFixed(2)),
+                                        slaUnit: "%",
+                                        downtime: "",
+                                        problem: "",
+                                        site: siteName,
+                                        batteryVersion: version,
+                                    });
+                                }
+                            }
                         }
+
+                        batteryVersionData[version] = {
+                            name: versionNames[version],
+                            summary: {
+                                totalSites: versionSites.size,
+                                sla: Number(versionAvgSlaNow.toFixed(2)),
+                                slaUnit: "%",
+                            },
+                            message: versionMessage,
+                            downSla,
+                            underSla,
+                            dropSla,
+                            upSla,
+                        };
+                    } catch (error) {
+                        slaLogger.error({ error, version }, "Error processing battery version in daily detail report");
+                        // Continue with empty data for this version
+                        const versionNames: Record<string, string> = {
+                            talis5: "Talis5 Full",
+                            mix: "Talis5 Mix",
+                            jspro: "JSPro",
+                        };
+                        batteryVersionData[version] = {
+                            name: versionNames[version],
+                            message: "",
+                            downSla: [],
+                            underSla: [],
+                            dropSla: [],
+                            upSla: [],
+                        };
                     }
                 }
 
-                batteryVersionData[version] = {
-                    name: versionNames[version],
-                    summary: {
-                        totalSites: versionSites.size,
-                        sla: Number(versionAvgSlaNow.toFixed(2)),
-                        slaUnit: "%",
-                    },
-                    message: versionMessage,
-                    downSla,
-                    underSla,
-                    dropSla,
-                    upSla,
-                };
-            } catch (error) {
-                slaLogger.error({ error, version }, "Error processing battery version in daily detail report");
-                // Continue with empty data for this version
-                const versionNames: Record<string, string> = {
-                    talis5: "Talis5 Full",
-                    mix: "Talis5 Mix",
-                    jspro: "JSPro",
-                };
-                batteryVersionData[version] = {
-                    name: versionNames[version],
-                    message: "",
-                    downSla: [],
-                    underSla: [],
-                    dropSla: [],
-                    upSla: [],
-                };
-            }
-        }
+                // Get SLA Below 95.5% section data
+                let slaBelow95Section: SlaBaktiTypes.SlaBelow95Section;
+                try {
+                    slaBelow95Section = await this.getSlaBelow95Section(params.startDate, params.endDate);
+                    slaLogger.debug({ 
+                        totalSites: slaBelow95Section.totalSites,
+                        message: slaBelow95Section.message
+                    }, "SLA Below 95.5% section generated successfully");
+                } catch (error) {
+                    slaLogger.error({ error }, "Failed to generate SLA Below 95.5% section, using empty data");
+                    // Return empty section if error occurs
+                    const endDateFormatted = dayjs(params.endDate).format("YYYY-MM-DD");
+                    slaBelow95Section = {
+                        message: `Dear team, berikut site yang memiliki SLA avg dibawah 95.5% pada tanggal ${endDateFormatted}`,
+                        totalSites: 0,
+                        detail: {
+                            batteryVersion: {
+                                talis5: {
+                                    name: "Talis5 Full",
+                                    totalSites: 0,
+                                    sites: [],
+                                },
+                                mix: {
+                                    name: "Talis5 Mix",
+                                    totalSites: 0,
+                                    sites: [],
+                                },
+                                jspro: {
+                                    name: "JS Pro",
+                                    totalSites: 0,
+                                    sites: [],
+                                },
+                            },
+                        },
+                    };
+                }
 
-        return {
-            report: {
-                dateNow: params.endDate,
-                dateBefore: params.startDate,
-                totalSite: totalSites,
-                slaNow: Number(slaNow.toFixed(2)),
-                slaBefore: Number(slaBefore.toFixed(2)),
-                slaUnit: "%",
-                message: summaryMessage,
-                detail: {
-                    batteryVersion: {
-                        talis5: batteryVersionData.talis5 || { name: "Talis5 Full", message: "", downSla: [], underSla: [], dropSla: [], upSla: [] },
-                        mix: batteryVersionData.mix || { name: "Talis5 Mix", message: "", downSla: [], underSla: [], dropSla: [], upSla: [] },
-                        jspro: batteryVersionData.jspro || { name: "JSPro", message: "", downSla: [], underSla: [], dropSla: [], upSla: [] },
+                return {
+                    report: {
+                        dateNow: params.endDate,
+                        dateBefore: params.startDate,
+                        totalSite: totalSites,
+                        slaNow: Number(slaNow.toFixed(2)),
+                        slaBefore: Number(slaBefore.toFixed(2)),
+                        slaUnit: "%",
+                        message: summaryMessage,
+                        detail: {
+                            batteryVersion: {
+                                talis5: batteryVersionData.talis5 || { name: "Talis5 Full", message: "", downSla: [], underSla: [], dropSla: [], upSla: [] },
+                                mix: batteryVersionData.mix || { name: "Talis5 Mix", message: "", downSla: [], underSla: [], dropSla: [], upSla: [] },
+                                jspro: batteryVersionData.jspro || { name: "JSPro", message: "", downSla: [], underSla: [], dropSla: [], upSla: [] },
+                            },
+                        },
                     },
-                },
-            },
-        };
+                    slaBelow95: slaBelow95Section,
+                };
             },
             ttl
         );
