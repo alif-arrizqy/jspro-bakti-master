@@ -28,7 +28,9 @@ export class SiteUpController {
 
             return reply.send({
                 success: true,
-                ...result,
+                data: result.data,
+                pagination: result.pagination,
+                summary: result.summary,
             });
         } catch (error) {
             siteUpLogger.error({ error }, "Error getting site up data");

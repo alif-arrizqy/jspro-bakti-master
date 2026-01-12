@@ -28,7 +28,9 @@ export class SiteDownController {
 
             return reply.send({
                 success: true,
-                ...result,
+                data: result.data,
+                pagination: result.pagination,
+                summary: result.summary,
             });
         } catch (error) {
             siteDownLogger.error({ error }, "Error getting site downtime data");

@@ -3,13 +3,12 @@ import { nmsApiService } from "./nms-api.service";
 import { sitesService } from "./sites.service";
 import { siteDownLogger } from "../utils/logger";
 import type * as SiteDownTypes from "../types/site-down.types";
-import type { PaginatedResponse } from "../types/common.types";
 
 export class SiteDownService {
     /**
      * Get all site downtime data with pagination
      */
-    async getAll(params: SiteDownTypes.SiteDowntimeQueryParams): Promise<PaginatedResponse<SiteDownTypes.SiteDowntimeResponse>> {
+    async getAll(params: SiteDownTypes.SiteDowntimeQueryParams): Promise<SiteDownTypes.SiteDowntimeListResponse> {
         const prisma = databaseService.getMonitoringClient();
         const page = params.page || 1;
         const limit = params.limit || 20;
@@ -21,7 +20,7 @@ export class SiteDownService {
             where.siteId = params.siteId;
         }
 
-        const [data, total] = await Promise.all([
+        const [data, total, totalSitesDown] = await Promise.all([
             prisma.siteDowntime.findMany({
                 where,
                 skip,
@@ -31,9 +30,30 @@ export class SiteDownService {
                 },
             }),
             prisma.siteDowntime.count({ where }),
+            prisma.siteDowntime.count(),
         ]);
 
+        // Get total sites count with error handling
+        let totalSites = 0;
+        try {
+            totalSites = await sitesService.getTotalSitesCount();
+        } catch (error) {
+            siteDownLogger.warn({ error }, "Failed to get total sites count, using 0 as fallback");
+        }
+
         const totalPages = Math.ceil(total / limit);
+        const percentageSitesDown = totalSites > 0 ? Number(((totalSitesDown / totalSites) * 100).toFixed(2)) : 0;
+        
+        const summary: SiteDownTypes.SiteDowntimeSummary = {
+            totalSites,
+            totalSitesDown,
+            percentageSitesDown,
+        };
+
+        siteDownLogger.debug(
+            { totalSites, totalSitesDown, percentageSitesDown },
+            "Generated summary for site downtime"
+        );
 
         return {
             data: data.map((record) => ({
@@ -51,6 +71,7 @@ export class SiteDownService {
                 total,
                 totalPages,
             },
+            summary,
         };
     }
 
@@ -156,12 +177,14 @@ export class SiteDownService {
      * 2. Map NMS site_id_name to sites-service siteId
      * 3. Only process sites that exist in sites-service (skip others)
      * 4. Insert/update to database
+     * 5. Delete records that are no longer in API (site is up again)
      */
-    async syncFromNms(): Promise<{ inserted: number; updated: number; errors: number; skipped: number }> {
+    async syncFromNms(): Promise<{ inserted: number; updated: number; errors: number; skipped: number; deleted: number }> {
         let inserted = 0;
         let updated = 0;
         let errors = 0;
         let skipped = 0;
+        let deleted = 0;
 
         try {
             siteDownLogger.info("Starting sync from NMS API");
@@ -169,6 +192,9 @@ export class SiteDownService {
             // Step 1: Fetch data from NMS API
             const nmsData = (await nmsApiService.fetchSiteData("down")) as SiteDownTypes.NmsSiteDownItem[];
             siteDownLogger.info({ totalFromNms: nmsData.length }, "Fetched data from NMS API");
+
+            // Track all successfully processed siteIds from API
+            const processedSiteIds = new Set<string>();
 
             // Step 2: Process each NMS site
             for (const item of nmsData) {
@@ -206,6 +232,7 @@ export class SiteDownService {
                     };
 
                     await this.upsert(data);
+                    processedSiteIds.add(mappedSiteId); // Track successfully processed siteId
 
                     if (existing) {
                         updated++;
@@ -246,18 +273,44 @@ export class SiteDownService {
                 }
             }
 
+            // Step 6: Delete records that are no longer in API (site is up again)
+            // Only delete if we have successfully processed at least one site from API
+            if (processedSiteIds.size > 0) {
+                const prisma = databaseService.getMonitoringClient();
+                const deleteResult = await prisma.siteDowntime.deleteMany({
+                    where: {
+                        siteId: {
+                            notIn: Array.from(processedSiteIds),
+                        },
+                    },
+                });
+                deleted = deleteResult.count;
+
+                if (deleted > 0) {
+                    siteDownLogger.info(
+                        { deleted, processedSiteIds: processedSiteIds.size },
+                        "Deleted site downtime records that are no longer in API (sites are up again)"
+                    );
+                }
+            } else {
+                siteDownLogger.warn(
+                    "No sites were successfully processed from API, skipping deletion of old records"
+                );
+            }
+
             siteDownLogger.info(
                 { 
                     inserted, 
                     updated, 
                     errors, 
-                    skipped, 
+                    skipped,
+                    deleted,
                     total: nmsData.length,
                     processed: inserted + updated 
                 },
                 "Sync from NMS completed"
             );
-            return { inserted, updated, errors, skipped };
+            return { inserted, updated, errors, skipped, deleted };
         } catch (error) {
             siteDownLogger.error({ error }, "Failed to sync from NMS");
             throw error;

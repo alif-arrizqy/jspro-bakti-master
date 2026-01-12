@@ -43,6 +43,14 @@ export async function siteUpRoutes(fastify: FastifyInstance) {
                                     totalPages: { type: "integer" },
                                 },
                             },
+                            summary: {
+                                type: "object",
+                                properties: {
+                                    totalSites: { type: "integer", description: "Total number of active sites from sites-service" },
+                                    totalSitesUp: { type: "integer", description: "Total number of sites currently up" },
+                                    percentageSitesUp: { type: "number", description: "Percentage of sites up" },
+                                },
+                            },
                         },
                     },
                 },

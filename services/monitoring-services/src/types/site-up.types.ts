@@ -17,6 +17,23 @@ export interface SiteUpQueryParams {
     siteId?: string;
 }
 
+export interface SiteUpSummary {
+    totalSites: number;
+    totalSitesUp: number;
+    percentageSitesUp: number;
+}
+
+export interface SiteUpListResponse {
+    data: SiteUpResponse[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+    summary: SiteUpSummary;
+}
+
 export interface NmsSiteUpItem {
     site_id_name: string;
     name: string;

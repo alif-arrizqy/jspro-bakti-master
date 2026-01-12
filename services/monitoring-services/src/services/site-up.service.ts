@@ -3,13 +3,12 @@ import { nmsApiService } from "./nms-api.service";
 import { sitesService } from "./sites.service";
 import { siteUpLogger } from "../utils/logger";
 import type * as SiteUpTypes from "../types/site-up.types";
-import type { PaginatedResponse } from "../types/common.types";
 
 export class SiteUpService {
     /**
      * Get all site up data with pagination
      */
-    async getAll(params: SiteUpTypes.SiteUpQueryParams): Promise<PaginatedResponse<SiteUpTypes.SiteUpResponse>> {
+    async getAll(params: SiteUpTypes.SiteUpQueryParams): Promise<SiteUpTypes.SiteUpListResponse> {
         const prisma = databaseService.getMonitoringClient();
         const page = params.page || 1;
         const limit = params.limit || 20;
@@ -21,7 +20,7 @@ export class SiteUpService {
             where.siteId = params.siteId;
         }
 
-        const [data, total] = await Promise.all([
+        const [data, total, totalSitesUp] = await Promise.all([
             prisma.siteUp.findMany({
                 where,
                 skip,
@@ -31,9 +30,30 @@ export class SiteUpService {
                 },
             }),
             prisma.siteUp.count({ where }),
+            prisma.siteUp.count(),
         ]);
 
+        // Get total sites count with error handling
+        let totalSites = 0;
+        try {
+            totalSites = await sitesService.getTotalSitesCount();
+        } catch (error) {
+            siteUpLogger.warn({ error }, "Failed to get total sites count, using 0 as fallback");
+        }
+
         const totalPages = Math.ceil(total / limit);
+        const percentageSitesUp = totalSites > 0 ? Number(((totalSitesUp / totalSites) * 100).toFixed(2)) : 0;
+        
+        const summary: SiteUpTypes.SiteUpSummary = {
+            totalSites,
+            totalSitesUp,
+            percentageSitesUp,
+        };
+
+        siteUpLogger.debug(
+            { totalSites, totalSitesUp, percentageSitesUp },
+            "Generated summary for site up"
+        );
 
         return {
             data: data.map((record) => ({
@@ -49,6 +69,7 @@ export class SiteUpService {
                 total,
                 totalPages,
             },
+            summary,
         };
     }
 

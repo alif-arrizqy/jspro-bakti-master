@@ -21,6 +21,23 @@ export interface SiteDowntimeQueryParams {
     siteId?: string;
 }
 
+export interface SiteDowntimeSummary {
+    totalSites: number;
+    totalSitesDown: number;
+    percentageSitesDown: number;
+}
+
+export interface SiteDowntimeListResponse {
+    data: SiteDowntimeResponse[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+    summary: SiteDowntimeSummary;
+}
+
 export interface NmsLoginResponse {
     refresh_token: string;
 }

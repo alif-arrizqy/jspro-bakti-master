@@ -220,6 +220,19 @@ export class SitesService {
         this.cacheTimestamp = 0;
         siteDownLogger.debug("Site mapping cache cleared");
     }
+
+    /**
+     * Get total number of active sites available from sites-service
+     */
+    async getTotalSitesCount(): Promise<number> {
+        try {
+            const mapping = await this.getSiteMapping();
+            return mapping.size;
+        } catch (error) {
+            siteDownLogger.warn({ error }, "Failed to get total sites count from sites-service");
+            return 0;
+        }
+    }
 }
 
 // Export singleton instance

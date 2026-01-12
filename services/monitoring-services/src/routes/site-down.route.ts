@@ -43,6 +43,14 @@ export async function siteDownRoutes(fastify: FastifyInstance) {
                                     totalPages: { type: "integer" },
                                 },
                             },
+                            summary: {
+                                type: "object",
+                                properties: {
+                                    totalSites: { type: "integer", description: "Total number of active sites from sites-service" },
+                                    totalSitesDown: { type: "integer", description: "Total number of sites currently down" },
+                                    percentageSitesDown: { type: "number", description: "Percentage of sites down" },
+                                },
+                            },
                         },
                     },
                 },
