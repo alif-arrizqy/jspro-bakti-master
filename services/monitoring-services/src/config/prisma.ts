@@ -1,4 +1,4 @@
-import { PrismaClient as SiteDownClient } from "@prisma/site-down-client";
+import { PrismaClient as MonitoringClient } from "@prisma/monitoring-client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { config } from "./env";
@@ -11,20 +11,20 @@ const poolConfig = {
     connectionTimeoutMillis: 2000,
 };
 
-// Connection pool for site_down_db
-const siteDownPool = new Pool({
-    connectionString: config.database.siteDownUrl,
+// Connection pool for monitoring_db
+const monitoringPool = new Pool({
+    connectionString: config.database.monitoringUrl,
     ...poolConfig,
 });
 
-// Adapter for site_down_db (Prisma 7 adapter pattern)
-const siteDownAdapter = new PrismaPg(siteDownPool);
+// Adapter for monitoring_db (Prisma 7 adapter pattern)
+const monitoringAdapter = new PrismaPg(monitoringPool);
 
-// Client for site_down_db
-const siteDownDb = new SiteDownClient({
-    adapter: siteDownAdapter,
+// Client for monitoring_db
+const monitoringDb = new MonitoringClient({
+    adapter: monitoringAdapter,
     log: config.app.isDevelopment ? ["query", "error", "warn"] : ["error"],
 });
 
-export { siteDownDb };
+export { monitoringDb };
 

@@ -8,7 +8,7 @@ const envSchema = z.object({
     PORT: z.string().transform(Number).default(3003),
     HOST: z.string().default("0.0.0.0"),
     API_PREFIX: z.string().default("/api/v1"),
-    SITE_DOWN_DATABASE_URL: z.string().url(),
+    MONITORING_DATABASE_URL: z.string().url(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
     NMS_API_URL: z.string().url().default("https://nmsapi.btsbakti.com/api/v1"),
     NMS_USERNAME: z.string(),
@@ -34,7 +34,7 @@ export const config = {
         isProduction: parsed.data.NODE_ENV === "production",
     },
     database: {
-        siteDownUrl: parsed.data.SITE_DOWN_DATABASE_URL,
+        monitoringUrl: parsed.data.MONITORING_DATABASE_URL,
     },
     logging: {
         level: parsed.data.LOG_LEVEL,
