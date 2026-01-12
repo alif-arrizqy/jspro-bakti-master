@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { siteDownRoutes } from "./site-down.route";
+import { siteUpRoutes } from "./site-up.route";
 
 export async function registerRoutes(fastify: FastifyInstance, prefix: string) {
     fastify.get(
@@ -31,5 +32,6 @@ export async function registerRoutes(fastify: FastifyInstance, prefix: string) {
     );
 
     fastify.register(siteDownRoutes, { prefix: `${prefix}/monitoring/site-down` });
+    fastify.register(siteUpRoutes, { prefix: `${prefix}/monitoring/site-up` });
 }
 
