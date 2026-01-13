@@ -3,6 +3,7 @@ import { slaBaktiRoutes } from "./sla-bakti.route";
 import { slaInternalRoutes } from "./sla-internal.route";
 import { historyGamasRoutes } from "./history-gamas.route";
 import { slaReasonRoutes } from "./sla-reason.route";
+import { cacheRoutes } from "./cache.route";
 
 export async function registerRoutes(fastify: FastifyInstance, prefix: string) {
     fastify.get(
@@ -37,4 +38,5 @@ export async function registerRoutes(fastify: FastifyInstance, prefix: string) {
     fastify.register(slaInternalRoutes, { prefix: `${prefix}/sla-internal` });
     fastify.register(historyGamasRoutes, { prefix: `${prefix}/history-gamas` });
     fastify.register(slaReasonRoutes, { prefix: `${prefix}/sla-reason` });
+    fastify.register(cacheRoutes, { prefix: `${prefix}/cache` });
 }
