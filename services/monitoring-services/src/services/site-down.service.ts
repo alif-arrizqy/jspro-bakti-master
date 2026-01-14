@@ -19,6 +19,12 @@ export class SiteDownService {
         if (params.siteId) {
             where.siteId = params.siteId;
         }
+        if (params.siteName) {
+            where.siteName = {
+                contains: params.siteName,
+                mode: 'insensitive', // Case-insensitive search
+            };
+        }
 
         const [data, total, totalSitesDown] = await Promise.all([
             prisma.siteDowntime.findMany({
@@ -60,7 +66,7 @@ export class SiteDownService {
                 id: record.id,
                 siteId: record.siteId,
                 siteName: record.siteName,
-                downSince: record.downSince.toISOString(),
+                downSince: record.downSince?.toISOString() ?? null,
                 downSeconds: record.downSeconds,
                 createdAt: record.createdAt.toISOString(),
                 updatedAt: record.updatedAt.toISOString(),
@@ -93,7 +99,7 @@ export class SiteDownService {
             id: record.id,
             siteId: record.siteId,
             siteName: record.siteName,
-            downSince: record.downSince.toISOString(),
+            downSince: record.downSince?.toISOString() ?? null,
             downSeconds: record.downSeconds,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
@@ -106,26 +112,33 @@ export class SiteDownService {
     async upsert(data: SiteDownTypes.SiteDowntimeInput): Promise<SiteDownTypes.SiteDowntimeResponse> {
         const prisma = databaseService.getMonitoringClient();
 
+        const createData: any = {
+            siteId: data.siteId,
+            siteName: data.siteName ?? null,
+            downSeconds: data.downSeconds ?? null,
+        };
+        if (data.downSince !== undefined && data.downSince !== null) {
+            createData.downSince = data.downSince;
+        } else {
+            createData.downSince = null;
+        }
+
+        const updateData: any = {};
+        if (data.siteName !== undefined) updateData.siteName = data.siteName;
+        if (data.downSince !== undefined) updateData.downSince = data.downSince;
+        if (data.downSeconds !== undefined) updateData.downSeconds = data.downSeconds;
+
         const record = await prisma.siteDowntime.upsert({
             where: { siteId: data.siteId },
-            update: {
-                siteName: data.siteName ?? undefined,
-                downSince: data.downSince,
-                downSeconds: data.downSeconds ?? undefined,
-            },
-            create: {
-                siteId: data.siteId,
-                siteName: data.siteName ?? null,
-                downSince: data.downSince,
-                downSeconds: data.downSeconds ?? null,
-            },
+            update: updateData,
+            create: createData,
         });
 
         return {
             id: record.id,
             siteId: record.siteId,
             siteName: record.siteName,
-            downSince: record.downSince.toISOString(),
+            downSince: record.downSince?.toISOString() ?? null,
             downSeconds: record.downSeconds,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
@@ -140,7 +153,7 @@ export class SiteDownService {
 
         const updateData: any = {};
         if (data.siteName !== undefined) updateData.siteName = data.siteName;
-        if (data.downSince) updateData.downSince = data.downSince;
+        if (data.downSince !== undefined) updateData.downSince = data.downSince;
         if (data.downSeconds !== undefined) updateData.downSeconds = data.downSeconds;
 
         const record = await prisma.siteDowntime.update({
@@ -152,7 +165,7 @@ export class SiteDownService {
             id: record.id,
             siteId: record.siteId,
             siteName: record.siteName,
-            downSince: record.downSince.toISOString(),
+            downSince: record.downSince?.toISOString() ?? null,
             downSeconds: record.downSeconds,
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
@@ -169,16 +182,7 @@ export class SiteDownService {
         });
     }
 
-    /**
-     * Fetch data from NMS API and upsert to database
-     * Only processes sites that exist in sites-service
-     * Flow:
-     * 1. Fetch data from NMS API
-     * 2. Map NMS site_id_name to sites-service siteId
-     * 3. Only process sites that exist in sites-service (skip others)
-     * 4. Insert/update to database
-     * 5. Delete records that are no longer in API (site is up again)
-     */
+
     async syncFromNms(): Promise<{ inserted: number; updated: number; errors: number; skipped: number; deleted: number }> {
         let inserted = 0;
         let updated = 0;
@@ -227,8 +231,8 @@ export class SiteDownService {
                     const data: SiteDownTypes.SiteDowntimeInput = {
                         siteId: mappedSiteId, // Use mapped siteId from sites-service
                         siteName: item.name,
-                        downSince: new Date(item.down_since),
-                        downSeconds: item.down_seconds,
+                        downSince: item.down_since ? new Date(item.down_since) : null,
+                        downSeconds: item.down_seconds ?? null,
                     };
 
                     await this.upsert(data);

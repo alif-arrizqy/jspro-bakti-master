@@ -19,6 +19,12 @@ export class SiteUpService {
         if (params.siteId) {
             where.siteId = params.siteId;
         }
+        if (params.siteName) {
+            where.siteName = {
+                contains: params.siteName,
+                mode: 'insensitive', // Case-insensitive search
+            };
+        }
 
         const [data, total, totalSitesUp] = await Promise.all([
             prisma.siteUp.findMany({
