@@ -15,6 +15,7 @@ export interface SiteUpQueryParams {
     page?: number;
     limit?: number;
     siteId?: string;
+    siteName?: string;
 }
 
 export interface SiteUpSummary {

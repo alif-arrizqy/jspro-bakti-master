@@ -9,13 +9,13 @@ datasource db {
 }
 
 model SiteDowntime {
-  id          Int      @id @default(autoincrement())
-  siteId      String   @unique @map("site_id") @db.VarChar(50)
-  siteName    String?  @map("site_name") @db.VarChar(255)
-  downSince   DateTime @map("down_since") @db.Timestamptz
-  downSeconds Int?     @map("down_seconds")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  id          Int       @id @default(autoincrement())
+  siteId      String    @unique @map("site_id") @db.VarChar(50)
+  siteName    String?   @map("site_name") @db.VarChar(255)
+  downSince   DateTime? @map("down_since") @db.Timestamptz
+  downSeconds Int?      @map("down_seconds")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   @@index([siteId], name: "idx_site_downtime_site_id")
   @@index([downSince], name: "idx_site_downtime_down_since")

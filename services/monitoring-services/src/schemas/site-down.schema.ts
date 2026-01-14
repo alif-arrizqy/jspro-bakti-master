@@ -9,6 +9,7 @@ export const siteDowntimeQuerySchema = z.object({
     page: z.coerce.number().min(1).default(1).describe("Page number"),
     limit: z.coerce.number().min(1).max(100).default(20).describe("Items per page"),
     siteId: z.string().optional().describe("Filter by Site ID"),
+    siteName: z.string().optional().describe("Filter by Site Name (case-insensitive search)"),
 });
 
 // Params for site ID routes

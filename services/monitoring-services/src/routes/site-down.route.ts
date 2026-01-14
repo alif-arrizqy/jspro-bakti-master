@@ -23,6 +23,7 @@ export async function siteDownRoutes(fastify: FastifyInstance) {
                         page: { type: "integer", default: 1, description: "Page number" },
                         limit: { type: "integer", default: 20, description: "Items per page" },
                         siteId: { type: "string", description: "Filter by Site ID" },
+                        siteName: { type: "string", description: "Filter by Site Name (case-insensitive search)" },
                     },
                 },
                 response: {

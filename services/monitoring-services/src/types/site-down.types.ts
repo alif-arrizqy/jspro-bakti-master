@@ -1,7 +1,7 @@
 export interface SiteDowntimeInput {
     siteId: string;
     siteName?: string | null;
-    downSince: Date;
+    downSince?: Date | null;
     downSeconds?: number | null;
 }
 
@@ -9,7 +9,7 @@ export interface SiteDowntimeResponse {
     id: number;
     siteId: string;
     siteName: string | null;
-    downSince: string;
+    downSince: string | null;
     downSeconds: number | null;
     createdAt: string;
     updatedAt: string;
@@ -19,6 +19,7 @@ export interface SiteDowntimeQueryParams {
     page?: number;
     limit?: number;
     siteId?: string;
+    siteName?: string;
 }
 
 export interface SiteDowntimeSummary {
@@ -50,8 +51,8 @@ export interface NmsSiteDownItem {
     site_id_name: string;
     name: string;
     terminal_id?: string | null; // For fallback mapping
-    down_since: string; // ISO format: "2026-01-08T00:53:36.426148"
-    down_seconds: number; // e.g., 49200
+    down_since?: string | null; // ISO format: "2026-01-08T00:53:36.426148"
+    down_seconds?: number | null; // e.g., 49200
 }
 
 export interface NmsSiteDownResponse {
