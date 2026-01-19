@@ -24,11 +24,37 @@ export async function addressRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
+                        message: { type: "string" },
                         data: {
-                            type: "array",
-                            items: { type: "object" },
+                            type: "object",
+                            properties: {
+                                items: {
+                                    type: "array",
+                                    items: {
+                                        type: "object",
+                                        properties: {
+                                            id: { type: "integer" },
+                                            province: { type: "string" },
+                                            cluster: { type: ["string", "null"] },
+                                            address_shipping: { type: "string" },
+                                            created_at: { type: "string" },
+                                            updated_at: { type: "string" },
+                                        },
+                                        additionalProperties: true,
+                                    },
+                                },
+                                pagination: {
+                                    type: "object",
+                                    properties: {
+                                        page: { type: "integer" },
+                                        limit: { type: "integer" },
+                                        total: { type: "integer" },
+                                        totalPages: { type: "integer" },
+                                    },
+                                    additionalProperties: true,
+                                },
+                            },
                         },
-                        pagination: { type: "object" },
                     },
                 },
             },
@@ -52,8 +78,21 @@ export async function addressRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: {
+                            type: "object",
+                            additionalProperties: true,
+                            properties: {
+                                id: { type: "integer" },
+                                province: { type: "string" },
+                                cluster: { type: ["string", "null"] },
+                                address_shipping: { type: "string" },
+                                created_at: { type: "string" },
+                                updated_at: { type: "string" },
+                            },
+                        },
                     },
+                    additionalProperties: true,
                 },
             },
         },
@@ -81,6 +120,7 @@ export async function addressRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
+                        message: { type: "string" },
                         data: { type: "object" },
                     },
                 },
@@ -116,6 +156,7 @@ export async function addressRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
+                        message: { type: "string" },
                         data: { type: "object" },
                     },
                 },

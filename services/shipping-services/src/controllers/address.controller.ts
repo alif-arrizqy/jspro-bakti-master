@@ -7,22 +7,23 @@ import {
     AddressIdParamSchema,
 } from "../schemas/shipping.schema";
 import { shippingLogger } from "../utils/logger";
+import { ResponseHelper } from "../utils/response.util";
 
 export class AddressController {
     async getAll(request: FastifyRequest, reply: FastifyReply) {
         try {
             const query = AddressQuerySchema.parse(request.query);
             const result = await addressService.getAll(query);
-            return reply.send({
-                success: true,
-                data: result.data,
-                pagination: result.pagination,
-            });
+            return ResponseHelper.successWithPagination(
+                reply,
+                "Addresses retrieved successfully",
+                result.data,
+                result.pagination
+            );
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting addresses");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get addresses",
+            return ResponseHelper.handleError(reply, error, "Failed to get addresses", {
+                logger: shippingLogger,
+                context: "Error getting addresses",
             });
         }
     }
@@ -31,16 +32,11 @@ export class AddressController {
         try {
             const params = AddressIdParamSchema.parse(request.params);
             const address = await addressService.getById(params.id);
-            return reply.send({
-                success: true,
-                data: address,
-            });
+            return ResponseHelper.success(reply, "Address retrieved successfully", address);
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting address by ID");
-            const status = error instanceof Error && error.message === "Address not found" ? 404 : 500;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get address",
+            return ResponseHelper.handleError(reply, error, "Failed to get address", {
+                logger: shippingLogger,
+                context: "Error getting address by ID",
             });
         }
     }
@@ -49,15 +45,11 @@ export class AddressController {
         try {
             const data = AddressCreateSchema.parse(request.body);
             const address = await addressService.create(data);
-            return reply.status(201).send({
-                success: true,
-                data: address,
-            });
+            return ResponseHelper.success(reply, "Address created successfully", address, 201);
         } catch (error) {
-            shippingLogger.error({ error }, "Error creating address");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to create address",
+            return ResponseHelper.handleError(reply, error, "Failed to create address", {
+                logger: shippingLogger,
+                context: "Error creating address",
             });
         }
     }
@@ -67,16 +59,11 @@ export class AddressController {
             const params = AddressIdParamSchema.parse(request.params);
             const data = AddressUpdateSchema.parse(request.body);
             const address = await addressService.update(params.id, data);
-            return reply.send({
-                success: true,
-                data: address,
-            });
+            return ResponseHelper.success(reply, "Address updated successfully", address);
         } catch (error) {
-            shippingLogger.error({ error }, "Error updating address");
-            const status = error instanceof Error && error.message === "Address not found" ? 404 : 400;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to update address",
+            return ResponseHelper.handleError(reply, error, "Failed to update address", {
+                logger: shippingLogger,
+                context: "Error updating address",
             });
         }
     }
@@ -85,16 +72,11 @@ export class AddressController {
         try {
             const params = AddressIdParamSchema.parse(request.params);
             await addressService.delete(params.id);
-            return reply.send({
-                success: true,
-                message: "Address deleted successfully",
-            });
+            return ResponseHelper.success(reply, "Address deleted successfully");
         } catch (error) {
-            shippingLogger.error({ error }, "Error deleting address");
-            const status = error instanceof Error && error.message.includes("not found") ? 404 : 400;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to delete address",
+            return ResponseHelper.handleError(reply, error, "Failed to delete address", {
+                logger: shippingLogger,
+                context: "Error deleting address",
             });
         }
     }

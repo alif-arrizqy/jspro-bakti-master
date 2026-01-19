@@ -23,13 +23,26 @@ export class AddressService {
             prisma.address.count({ where }),
         ]);
 
+        // Transform data to plain objects - ensure proper serialization
+        const transformedData = data.map((item) => {
+            if (!item) return null;
+            return {
+                id: Number(item.id),
+                province: String(item.province || ""),
+                cluster: item.cluster ? String(item.cluster) : null,
+                address_shipping: String(item.address_shipping || ""),
+                created_at: item.created_at ? new Date(item.created_at).toISOString() : null,
+                updated_at: item.updated_at ? new Date(item.updated_at).toISOString() : null,
+            };
+        }).filter((item) => item !== null);
+        
         return {
-            data: data.map(this.transformAddress),
+            data: transformedData,
             pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
+                page: Number(page),
+                limit: Number(limit),
+                total: Number(total),
+                totalPages: Math.ceil(Number(total) / Number(limit)),
             },
         };
     }
@@ -91,13 +104,18 @@ export class AddressService {
     }
 
     private transformAddress(address: any) {
+        if (!address) {
+            throw new Error("Address data is null or undefined");
+        }
+        
+        // Ensure proper serialization
         return {
-            id: address.id,
-            province: address.province,
-            cluster: address.cluster,
-            address_shipping: address.address_shipping,
-            created_at: address.created_at.toISOString(),
-            updated_at: address.updated_at.toISOString(),
+            id: Number(address.id),
+            province: String(address.province || ""),
+            cluster: address.cluster ? String(address.cluster) : null,
+            address_shipping: String(address.address_shipping || ""),
+            created_at: address.created_at ? new Date(address.created_at).toISOString() : null,
+            updated_at: address.updated_at ? new Date(address.updated_at).toISOString() : null,
         };
     }
 }
