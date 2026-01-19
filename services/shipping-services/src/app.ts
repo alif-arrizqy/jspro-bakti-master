@@ -36,6 +36,25 @@ Semua response menggunakan format standar:
 export async function buildApp(): Promise<FastifyInstance> {
     const fastify = Fastify({
         logger: false,
+        disableRequestLogging: true,
+        // Request timeout settings
+        connectionTimeout: 30000, // 30 seconds
+        keepAliveTimeout: 30000,
+        requestTimeout: 60000, // 60 seconds for file uploads
+        // Disable response validation to prevent data filtering
+        ajv: {
+            customOptions: {
+                removeAdditional: false, // Don't remove additional properties
+                useDefaults: true,
+                coerceTypes: true,
+            },
+        },
+    });
+
+    // Disable response validation to avoid schema mismatch errors
+    fastify.setSchemaErrorFormatter((errors, dataVar) => {
+        appLogger.warn({ errors, dataVar }, "Schema validation error");
+        return new Error("Schema validation error");
     });
 
     await fastify.register(cors, {
@@ -47,7 +66,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     await fastify.register(multipart, {
         limits: {
             fileSize: 5 * 1024 * 1024, // 5MB max
+            files: 1, // Max 1 file per request
         },
+        attachFieldsToBody: false, // Don't auto-parse, we handle manually
     });
 
     await fastify.register(swagger, {
