@@ -100,18 +100,12 @@ export const ProblemMasterIdParamSchema = z.object({
 // Retur Spare Part Schemas
 // ============================================================
 
-export const ListSparePartItemSchema = z.object({
-    name: z.string(),
-    qty: z.number().int().positive(),
-    condition: z.string(),
-});
-
 export const ReturSparePartCreateSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
     shipper: z.string().max(50),
     source_spare_part: z.string().max(100),
-    list_spare_part: z.array(ListSparePartItemSchema),
-    image: z.string().nullable().optional(), // Will be set from file upload
+    list_spare_part: z.string(),
+    image: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
 });
 
@@ -119,7 +113,7 @@ export const ReturSparePartUpdateSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     shipper: z.string().max(50).optional(),
     source_spare_part: z.string().max(100).optional(),
-    list_spare_part: z.array(ListSparePartItemSchema).optional(),
+    list_spare_part: z.string().optional(),
     image: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
 });
