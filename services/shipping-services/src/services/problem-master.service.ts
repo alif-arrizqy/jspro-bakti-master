@@ -24,13 +24,24 @@ export class ProblemMasterService {
             prisma.problemMaster.count({ where }),
         ]);
 
+        // Transform data to plain objects - ensure proper serialization
+        const transformedData = data.map((item) => {
+            if (!item) return null;
+            return {
+                id: Number(item.id),
+                problem_name: String(item.problem_name || ""),
+                created_at: item.created_at ? new Date(item.created_at).toISOString() : null,
+                updated_at: item.updated_at ? new Date(item.updated_at).toISOString() : null,
+            };
+        }).filter((item) => item !== null);
+        
         return {
-            data: data.map(this.transformProblem),
+            data: transformedData,
             pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
+                page: Number(page),
+                limit: Number(limit),
+                total: Number(total),
+                totalPages: Math.ceil(Number(total) / Number(limit)),
             },
         };
     }
@@ -88,11 +99,16 @@ export class ProblemMasterService {
     }
 
     private transformProblem(problem: any) {
+        if (!problem) {
+            throw new Error("Problem data is null or undefined");
+        }
+        
+        // Ensure proper serialization
         return {
-            id: problem.id,
-            problem_name: problem.problem_name,
-            created_at: problem.created_at.toISOString(),
-            updated_at: problem.updated_at.toISOString(),
+            id: Number(problem.id),
+            problem_name: String(problem.problem_name || ""),
+            created_at: problem.created_at ? new Date(problem.created_at).toISOString() : null,
+            updated_at: problem.updated_at ? new Date(problem.updated_at).toISOString() : null,
         };
     }
 }

@@ -20,12 +20,26 @@ export async function problemMasterRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
+                        message: { type: "string" },
                         data: {
-                            type: "array",
-                            items: { type: "object" },
+                            type: "object",
+                            properties: {
+                                items: {
+                                    type: "array",
+                                    items: { 
+                                        type: "object",
+                                        additionalProperties: true,
+                                    },
+                                },
+                                pagination: { 
+                                    type: "object",
+                                    additionalProperties: true,
+                                },
+                            },
+                            additionalProperties: true,
                         },
-                        pagination: { type: "object" },
                     },
+                    additionalProperties: true,
                 },
             },
         },
@@ -48,8 +62,19 @@ export async function problemMasterRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: {
+                            type: "object",
+                            properties: {
+                                id: { type: "integer" },
+                                problem_name: { type: "string" },
+                                created_at: { type: "string" },
+                                updated_at: { type: "string" },
+                            },
+                            additionalProperties: true,
+                        },
                     },
+                    additionalProperties: true,
                 },
             },
         },
@@ -72,6 +97,7 @@ export async function problemMasterRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
+                        message: { type: "string" },
                         data: { type: "object" },
                     },
                 },
@@ -102,6 +128,7 @@ export async function problemMasterRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
+                        message: { type: "string" },
                         data: { type: "object" },
                     },
                 },

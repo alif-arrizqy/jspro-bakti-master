@@ -7,22 +7,23 @@ import {
     ProblemMasterIdParamSchema,
 } from "../schemas/shipping.schema";
 import { shippingLogger } from "../utils/logger";
+import { ResponseHelper } from "../utils/response.util";
 
 export class ProblemMasterController {
     async getAll(request: FastifyRequest, reply: FastifyReply) {
         try {
             const query = ProblemMasterQuerySchema.parse(request.query);
             const result = await problemMasterService.getAll(query);
-            return reply.send({
-                success: true,
-                data: result.data,
-                pagination: result.pagination,
-            });
+            return ResponseHelper.successWithPagination(
+                reply,
+                "Problems retrieved successfully",
+                result.data,
+                result.pagination
+            );
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting problems");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get problems",
+            return ResponseHelper.handleError(reply, error, "Failed to get problems", {
+                logger: shippingLogger,
+                context: "Error getting problems",
             });
         }
     }
@@ -31,16 +32,11 @@ export class ProblemMasterController {
         try {
             const params = ProblemMasterIdParamSchema.parse(request.params);
             const problem = await problemMasterService.getById(params.id);
-            return reply.send({
-                success: true,
-                data: problem,
-            });
+            return ResponseHelper.success(reply, "Problem retrieved successfully", problem);
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting problem by ID");
-            const status = error instanceof Error && error.message === "Problem not found" ? 404 : 500;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get problem",
+            return ResponseHelper.handleError(reply, error, "Failed to get problem", {
+                logger: shippingLogger,
+                context: "Error getting problem by ID",
             });
         }
     }
@@ -49,15 +45,11 @@ export class ProblemMasterController {
         try {
             const data = ProblemMasterCreateSchema.parse(request.body);
             const problem = await problemMasterService.create(data);
-            return reply.status(201).send({
-                success: true,
-                data: problem,
-            });
+            return ResponseHelper.success(reply, "Problem created successfully", problem, 201);
         } catch (error) {
-            shippingLogger.error({ error }, "Error creating problem");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to create problem",
+            return ResponseHelper.handleError(reply, error, "Failed to create problem", {
+                logger: shippingLogger,
+                context: "Error creating problem",
             });
         }
     }
@@ -67,16 +59,11 @@ export class ProblemMasterController {
             const params = ProblemMasterIdParamSchema.parse(request.params);
             const data = ProblemMasterUpdateSchema.parse(request.body);
             const problem = await problemMasterService.update(params.id, data);
-            return reply.send({
-                success: true,
-                data: problem,
-            });
+            return ResponseHelper.success(reply, "Problem updated successfully", problem);
         } catch (error) {
-            shippingLogger.error({ error }, "Error updating problem");
-            const status = error instanceof Error && error.message === "Problem not found" ? 404 : 400;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to update problem",
+            return ResponseHelper.handleError(reply, error, "Failed to update problem", {
+                logger: shippingLogger,
+                context: "Error updating problem",
             });
         }
     }
@@ -85,16 +72,11 @@ export class ProblemMasterController {
         try {
             const params = ProblemMasterIdParamSchema.parse(request.params);
             await problemMasterService.delete(params.id);
-            return reply.send({
-                success: true,
-                message: "Problem deleted successfully",
-            });
+            return ResponseHelper.success(reply, "Problem deleted successfully");
         } catch (error) {
-            shippingLogger.error({ error }, "Error deleting problem");
-            const status = error instanceof Error && error.message.includes("not found") ? 404 : 400;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to delete problem",
+            return ResponseHelper.handleError(reply, error, "Failed to delete problem", {
+                logger: shippingLogger,
+                context: "Error deleting problem",
             });
         }
     }
