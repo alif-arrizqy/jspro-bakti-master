@@ -9,22 +9,23 @@ import {
 } from "../schemas/shipping.schema";
 import { shippingLogger } from "../utils/logger";
 import { processImageUpload } from "../utils/file-upload.util";
+import { ResponseHelper } from "../utils/response.util";
 
 export class ShippingSparePartController {
     async getAll(request: FastifyRequest, reply: FastifyReply) {
         try {
             const query = ShippingSparePartQuerySchema.parse(request.query);
             const result = await shippingSparePartService.getAll(query);
-            return reply.send({
-                success: true,
-                data: result.data,
-                pagination: result.pagination,
-            });
+            return ResponseHelper.successWithPagination(
+                reply,
+                "Shipping spare parts retrieved successfully",
+                result.data,
+                result.pagination
+            );
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting shipping spare parts");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get shipping spare parts",
+            return ResponseHelper.handleError(reply, error, "Failed to get shipping spare parts", {
+                logger: shippingLogger,
+                context: "Error getting shipping spare parts",
             });
         }
     }
@@ -33,16 +34,16 @@ export class ShippingSparePartController {
         try {
             const query = ShippingSparePartQuerySchema.omit({ status: true }).parse(request.query);
             const result = await shippingSparePartService.getActive(query);
-            return reply.send({
-                success: true,
-                data: result.data,
-                pagination: result.pagination,
-            });
+            return ResponseHelper.successWithPagination(
+                reply,
+                "Active shipping spare parts retrieved successfully",
+                result.data,
+                result.pagination
+            );
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting active shipping spare parts");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get active shipping spare parts",
+            return ResponseHelper.handleError(reply, error, "Failed to get active shipping spare parts", {
+                logger: shippingLogger,
+                context: "Error getting active shipping spare parts",
             });
         }
     }
@@ -51,16 +52,16 @@ export class ShippingSparePartController {
         try {
             const query = ShippingSparePartQuerySchema.omit({ status: true }).parse(request.query);
             const result = await shippingSparePartService.getHistory(query);
-            return reply.send({
-                success: true,
-                data: result.data,
-                pagination: result.pagination,
-            });
+            return ResponseHelper.successWithPagination(
+                reply,
+                "Shipping history retrieved successfully",
+                result.data,
+                result.pagination
+            );
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting shipping history");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get shipping history",
+            return ResponseHelper.handleError(reply, error, "Failed to get shipping history", {
+                logger: shippingLogger,
+                context: "Error getting shipping history",
             });
         }
     }
@@ -69,57 +70,74 @@ export class ShippingSparePartController {
         try {
             const params = ShippingSparePartIdParamSchema.parse(request.params);
             const shipping = await shippingSparePartService.getById(params.id);
-            return reply.send({
-                success: true,
-                data: shipping,
-            });
+            return ResponseHelper.success(reply, "Shipping spare part retrieved successfully", shipping);
         } catch (error) {
-            shippingLogger.error({ error }, "Error getting shipping by ID");
-            const status = error instanceof Error && error.message === "Shipping spare part not found" ? 404 : 500;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to get shipping spare part",
+            return ResponseHelper.handleError(reply, error, "Failed to get shipping spare part", {
+                logger: shippingLogger,
+                context: "Error getting shipping by ID",
             });
         }
     }
 
     async create(request: FastifyRequest, reply: FastifyReply) {
         try {
-            // Handle multipart form data
-            const parts = request.parts();
             const fields: Record<string, any> = {};
-            let ticketImageFile: any = null;
+            let ticketImageUrl: string | null = null;
+            const parts = request.parts();
 
             for await (const part of parts) {
-                if (part.type === "file" && part.fieldname === "ticket_image") {
-                    ticketImageFile = part;
-                } else if (part.type === "field") {
-                    fields[part.fieldname] = part.value;
+                try {
+                    if (part.type === "file") {
+                        if (part.fieldname === "ticket_image") {
+                            try {
+                                ticketImageUrl = await processImageUpload(part, "ticket");
+                            } catch (uploadError: any) {
+                                shippingLogger.error({ error: uploadError.message }, "Error processing image upload");
+                                return ResponseHelper.error(reply, `Error processing image: ${uploadError.message}`, 400);
+                            }
+                        } else {
+                            await part.toBuffer();
+                        }
+                    } else if (part.type === "field") {
+                        const value = part.value === "" ? null : part.value;
+                        fields[part.fieldname] = value;
+                    }
+                } catch (partError: any) {
+                    shippingLogger.error({ error: partError.message, fieldname: part.fieldname }, "Error processing part");
+                    throw partError;
                 }
             }
 
-            // Process ticket image upload
-            let ticketImageUrl: string | null = null;
-            if (ticketImageFile) {
-                ticketImageUrl = await processImageUpload(ticketImageFile, "ticket");
-            }
-
-            // Parse and validate data
-            const data = ShippingSparePartCreateSchema.parse({
+            const dataToValidate: Record<string, any> = {
                 ...fields,
                 ticket_image: ticketImageUrl,
-            });
+            };
+
+            if (dataToValidate.address_id) {
+                dataToValidate.address_id = Number(dataToValidate.address_id);
+            }
+            if (dataToValidate.problem_id) {
+                dataToValidate.problem_id = Number(dataToValidate.problem_id);
+            }
+
+            let data;
+            try {
+                data = ShippingSparePartCreateSchema.parse(dataToValidate);
+            } catch (error: any) {
+                shippingLogger.error({ error: error.errors || error.message }, "Validation error");
+                return ResponseHelper.error(
+                    reply,
+                    `Validation error: ${error.errors ? JSON.stringify(error.errors) : error.message}`,
+                    400
+                );
+            }
 
             const shipping = await shippingSparePartService.create(data);
-            return reply.status(201).send({
-                success: true,
-                data: shipping,
-            });
+            return ResponseHelper.success(reply, "Shipping spare part created successfully", shipping, 201);
         } catch (error) {
-            shippingLogger.error({ error }, "Error creating shipping spare part");
-            return reply.status(400).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to create shipping spare part",
+            return ResponseHelper.handleError(reply, error, "Failed to create shipping spare part", {
+                logger: shippingLogger,
+                context: "Error creating shipping spare part",
             });
         }
     }
@@ -127,48 +145,44 @@ export class ShippingSparePartController {
     async update(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
         try {
             const params = ShippingSparePartIdParamSchema.parse(request.params);
-
-            // Handle multipart form data
             const parts = request.parts();
             const fields: Record<string, any> = {};
-            let resiImageFile: any = null;
+            let resiImageUrl: string | null = null;
 
             for await (const part of parts) {
-                if (part.type === "file" && part.fieldname === "resi_image") {
-                    resiImageFile = part;
-                } else if (part.type === "field") {
-                    fields[part.fieldname] = part.value;
+                try {
+                    if (part.type === "file") {
+                        if (part.fieldname === "resi_image") {
+                            try {
+                                resiImageUrl = await processImageUpload(part, "resi");
+                            } catch (uploadError: any) {
+                                shippingLogger.error({ error: uploadError.message }, "Error processing resi image upload");
+                                return ResponseHelper.error(reply, `Error processing image: ${uploadError.message}`, 400);
+                            }
+                        } else {
+                            await part.toBuffer();
+                        }
+                    } else if (part.type === "field") {
+                        const value = part.value === "" ? null : part.value;
+                        fields[part.fieldname] = value;
+                    }
+                } catch (partError: any) {
+                    shippingLogger.error({ error: partError.message, fieldname: part.fieldname }, "Error processing part");
+                    throw partError;
                 }
             }
 
-            // Process resi image upload
-            let resiImageUrl: string | null = null;
-            if (resiImageFile) {
-                resiImageUrl = await processImageUpload(resiImageFile, "resi");
-            }
-
-            // Parse and validate data
             const data = ShippingSparePartUpdateSchema.parse({
                 ...fields,
                 resi_image: resiImageUrl !== null ? resiImageUrl : fields.resi_image,
             });
 
             const shipping = await shippingSparePartService.update(params.id, data);
-            return reply.send({
-                success: true,
-                data: shipping,
-            });
+            return ResponseHelper.success(reply, "Shipping spare part updated successfully", shipping);
         } catch (error) {
-            shippingLogger.error({ error }, "Error updating shipping spare part");
-            const status =
-                error instanceof Error && error.message === "Shipping spare part not found"
-                    ? 404
-                    : error instanceof Error && error.message.includes("Invalid status transition")
-                    ? 400
-                    : 400;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to update shipping spare part",
+            return ResponseHelper.handleError(reply, error, "Failed to update shipping spare part", {
+                logger: shippingLogger,
+                context: "Error updating shipping spare part",
             });
         }
     }
@@ -177,16 +191,11 @@ export class ShippingSparePartController {
         try {
             const params = ShippingSparePartIdParamSchema.parse(request.params);
             await shippingSparePartService.delete(params.id);
-            return reply.send({
-                success: true,
-                message: "Shipping spare part deleted successfully",
-            });
+            return ResponseHelper.success(reply, "Shipping spare part deleted successfully");
         } catch (error) {
-            shippingLogger.error({ error }, "Error deleting shipping spare part");
-            const status = error instanceof Error && error.message.includes("not found") ? 404 : 400;
-            return reply.status(status).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to delete shipping spare part",
+            return ResponseHelper.handleError(reply, error, "Failed to delete shipping spare part", {
+                logger: shippingLogger,
+                context: "Error deleting shipping spare part",
             });
         }
     }
@@ -200,10 +209,9 @@ export class ShippingSparePartController {
             reply.header("Content-Disposition", `attachment; filename="${filename}"`);
             return reply.send(buffer);
         } catch (error) {
-            shippingLogger.error({ error }, "Error exporting shipping spare parts to Excel");
-            return reply.status(500).send({
-                success: false,
-                error: error instanceof Error ? error.message : "Failed to export to Excel",
+            return ResponseHelper.handleError(reply, error, "Failed to export to Excel", {
+                logger: shippingLogger,
+                context: "Error exporting shipping spare parts to Excel",
             });
         }
     }

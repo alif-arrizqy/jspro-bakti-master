@@ -25,16 +25,8 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     limit: { type: "integer", default: 20 },
                 },
             },
-            response: {
-                200: {
-                    type: "object",
-                    properties: {
-                        success: { type: "boolean" },
-                        data: { type: "array", items: { type: "object" } },
-                        pagination: { type: "object" },
-                    },
-                },
-            },
+            // Disable response validation to prevent data filtering
+            response: false as any,
         },
         handler: shippingSparePartController.getAll.bind(shippingSparePartController),
     });
@@ -58,16 +50,8 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     limit: { type: "integer", default: 20 },
                 },
             },
-            response: {
-                200: {
-                    type: "object",
-                    properties: {
-                        success: { type: "boolean" },
-                        data: { type: "array", items: { type: "object" } },
-                        pagination: { type: "object" },
-                    },
-                },
-            },
+            // Disable response validation to prevent data filtering
+            response: false as any,
         },
         handler: shippingSparePartController.getActive.bind(shippingSparePartController),
     });
@@ -91,16 +75,8 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     limit: { type: "integer", default: 20 },
                 },
             },
-            response: {
-                200: {
-                    type: "object",
-                    properties: {
-                        success: { type: "boolean" },
-                        data: { type: "array", items: { type: "object" } },
-                        pagination: { type: "object" },
-                    },
-                },
-            },
+            // Disable response validation to prevent data filtering
+            response: false as any,
         },
         handler: shippingSparePartController.getHistory.bind(shippingSparePartController),
     });
@@ -157,7 +133,44 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: {
+                            type: "object",
+                            properties: {
+                                id: { type: "integer" },
+                                date: { type: ["string", "null"] },
+                                site_id: { type: ["string", "null"] },
+                                address_id: { type: ["integer", "null"] },
+                                address: {
+                                    type: ["object", "null"],
+                                    properties: {
+                                        id: { type: "integer" },
+                                        province: { type: "string" },
+                                        cluster: { type: ["string", "null"] },
+                                        address_shipping: { type: "string" },
+                                    },
+                                    additionalProperties: true,
+                                },
+                                sparepart_note: { type: ["string", "null"] },
+                                problem_id: { type: ["integer", "null"] },
+                                problem: {
+                                    type: ["object", "null"],
+                                    properties: {
+                                        id: { type: "integer" },
+                                        problem_name: { type: "string" },
+                                    },
+                                    additionalProperties: true,
+                                },
+                                ticket_number: { type: ["string", "null"] },
+                                ticket_image: { type: ["string", "null"] },
+                                status: { type: ["string", "null"] },
+                                resi_number: { type: ["string", "null"] },
+                                resi_image: { type: ["string", "null"] },
+                                created_at: { type: ["string", "null"] },
+                                updated_at: { type: ["string", "null"] },
+                            },
+                            additionalProperties: true,
+                        },
                     },
                 },
             },
@@ -172,31 +185,18 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
             summary: "Create shipping spare part",
             description: "Create new shipping spare part with optional ticket image upload",
             consumes: ["multipart/form-data"],
-            body: {
-                type: "object",
-                required: ["date", "site_id", "address_id", "problem_id", "status"],
-                properties: {
-                    date: { type: "string", format: "date" },
-                    site_id: { type: "string" },
-                    address_id: { type: "integer" },
-                    sparepart_note: { type: "string" },
-                    problem_id: { type: "integer" },
-                    ticket_number: { type: "string" },
-                    ticket_image: { type: "string", format: "binary" },
-                    status: {
-                        type: "string",
-                        enum: ["REQUEST_GUDANG", "PROSES_KIRIM", "SELESAI"],
-                        default: "REQUEST_GUDANG",
-                    },
-                },
-            },
+            // Body validation is handled in controller with Zod schema
+            // Fastify cannot validate multipart/form-data body schema directly
+            // Remove body schema to avoid validation errors
             response: {
                 201: {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: { type: "object", additionalProperties: true },
                     },
+                    additionalProperties: true,
                 },
             },
         },
@@ -217,24 +217,18 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                 },
                 required: ["id"],
             },
-            body: {
-                type: "object",
-                properties: {
-                    resi_number: { type: "string" },
-                    resi_image: { type: "string", format: "binary" },
-                    status: {
-                        type: "string",
-                        enum: ["REQUEST_GUDANG", "PROSES_KIRIM", "SELESAI"],
-                    },
-                },
-            },
+            // Body validation is handled in controller with Zod schema
+            // Fastify cannot validate multipart/form-data body schema directly
+            // Remove body schema to avoid validation errors
             response: {
                 200: {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: { type: "object", additionalProperties: true },
                     },
+                    additionalProperties: true,
                 },
             },
         },

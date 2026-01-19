@@ -71,13 +71,47 @@ export class ShippingSparePartService {
             prisma.shippingSparePart.count({ where }),
         ]);
 
+        // Transform data to plain objects - ensure proper serialization (following address/problem-master pattern)
+        const transformedData = data.map((item) => {
+            if (!item) return null;
+            return {
+                id: Number(item.id),
+                date: item.date ? new Date(item.date).toISOString().split("T")[0] : null,
+                site_id: item.site_id ? String(item.site_id) : null,
+                address_id: item.address_id ? Number(item.address_id) : null,
+                address: item.address
+                    ? {
+                          id: Number(item.address.id),
+                          province: String(item.address.province || ""),
+                          cluster: item.address.cluster ? String(item.address.cluster) : null,
+                          address_shipping: String(item.address.address_shipping || ""),
+                      }
+                    : null,
+                sparepart_note: item.sparepart_note ? String(item.sparepart_note) : null,
+                problem_id: item.problem_id ? Number(item.problem_id) : null,
+                problem: item.problem
+                    ? {
+                          id: Number(item.problem.id),
+                          problem_name: String(item.problem.problem_name || ""),
+                      }
+                    : null,
+                ticket_number: item.ticket_number ? String(item.ticket_number) : null,
+                ticket_image: item.ticket_image ? String(item.ticket_image) : null,
+                status: item.status ? String(item.status) : null,
+                resi_number: item.resi_number ? String(item.resi_number) : null,
+                resi_image: item.resi_image ? String(item.resi_image) : null,
+                created_at: item.created_at ? new Date(item.created_at).toISOString() : null,
+                updated_at: item.updated_at ? new Date(item.updated_at).toISOString() : null,
+            };
+        }).filter((item) => item !== null);
+
         return {
-            data: data.map(this.transformShipping),
+            data: transformedData,
             pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
+                page: Number(page),
+                limit: Number(limit),
+                total: Number(total),
+                totalPages: Math.ceil(Number(total) / Number(limit)),
             },
         };
     }
@@ -116,13 +150,8 @@ export class ShippingSparePartService {
         // Validate foreign keys exist
         await this.validateForeignKeys(data.address_id, data.problem_id);
 
-        // Validate site_id exists in sites service (optional, don't block if service is down)
         if (data.site_id) {
-            const isValidSite = await sitesService.validateSiteId(data.site_id);
-            if (!isValidSite) {
-                shippingLogger.warn({ siteId: data.site_id }, "Site ID not found or inactive in sites service");
-                // Don't throw error, just log warning
-            }
+            await sitesService.validateSiteId(data.site_id);
         }
 
         const shipping = await prisma.shippingSparePart.create({
@@ -323,35 +352,51 @@ export class ShippingSparePartService {
     }
 
     private transformShipping(shipping: any) {
-        return {
-            id: shipping.id,
-            date: shipping.date.toISOString().split("T")[0],
-            site_id: shipping.site_id,
-            address_id: shipping.address_id,
-            address: shipping.address
-                ? {
-                      id: shipping.address.id,
-                      province: shipping.address.province,
-                      cluster: shipping.address.cluster,
-                      address_shipping: shipping.address.address_shipping,
-                  }
-                : null,
-            sparepart_note: shipping.sparepart_note,
-            problem_id: shipping.problem_id,
-            problem: shipping.problem
-                ? {
-                      id: shipping.problem.id,
-                      problem_name: shipping.problem.problem_name,
-                  }
-                : null,
-            ticket_number: shipping.ticket_number,
-            ticket_image: shipping.ticket_image,
-            status: shipping.status,
-            resi_number: shipping.resi_number,
-            resi_image: shipping.resi_image,
-            created_at: shipping.created_at.toISOString(),
-            updated_at: shipping.updated_at.toISOString(),
+        if (!shipping) {
+            throw new Error("Shipping data is null or undefined");
+        }
+        
+        // Ensure proper serialization with explicit type conversions
+        // Create plain object to avoid serialization issues
+        const result: any = {
+            id: Number(shipping.id) || 0,
+            date: shipping.date ? new Date(shipping.date).toISOString().split("T")[0] : null,
+            site_id: shipping.site_id ? String(shipping.site_id) : null,
+            address_id: shipping.address_id ? Number(shipping.address_id) : null,
+            sparepart_note: shipping.sparepart_note ? String(shipping.sparepart_note) : null,
+            problem_id: shipping.problem_id ? Number(shipping.problem_id) : null,
+            ticket_number: shipping.ticket_number ? String(shipping.ticket_number) : null,
+            ticket_image: shipping.ticket_image ? String(shipping.ticket_image) : null,
+            status: shipping.status ? String(shipping.status) : null,
+            resi_number: shipping.resi_number ? String(shipping.resi_number) : null,
+            resi_image: shipping.resi_image ? String(shipping.resi_image) : null,
+            created_at: shipping.created_at ? new Date(shipping.created_at).toISOString() : null,
+            updated_at: shipping.updated_at ? new Date(shipping.updated_at).toISOString() : null,
         };
+
+        // Handle address relation
+        if (shipping.address) {
+            result.address = {
+                id: Number(shipping.address.id) || 0,
+                province: String(shipping.address.province || ""),
+                cluster: shipping.address.cluster ? String(shipping.address.cluster) : null,
+                address_shipping: String(shipping.address.address_shipping || ""),
+            };
+        } else {
+            result.address = null;
+        }
+
+        // Handle problem relation
+        if (shipping.problem) {
+            result.problem = {
+                id: Number(shipping.problem.id) || 0,
+                problem_name: String(shipping.problem.problem_name || ""),
+            };
+        } else {
+            result.problem = null;
+        }
+
+        return result;
     }
 }
 
