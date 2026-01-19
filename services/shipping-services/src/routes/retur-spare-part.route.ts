@@ -20,16 +20,8 @@ export async function returSparePartRoutes(fastify: FastifyInstance) {
                     limit: { type: "integer", default: 20 },
                 },
             },
-            response: {
-                200: {
-                    type: "object",
-                    properties: {
-                        success: { type: "boolean" },
-                        data: { type: "array", items: { type: "object" } },
-                        pagination: { type: "object" },
-                    },
-                },
-            },
+            // Disable response validation to prevent data filtering
+            response: false as any,
         },
         handler: returSparePartController.getAll.bind(returSparePartController),
     });
@@ -76,15 +68,8 @@ export async function returSparePartRoutes(fastify: FastifyInstance) {
                 },
                 required: ["id"],
             },
-            response: {
-                200: {
-                    type: "object",
-                    properties: {
-                        success: { type: "boolean" },
-                        data: { type: "object" },
-                    },
-                },
-            },
+            // Disable response validation to prevent data filtering
+            response: false as any,
         },
         handler: returSparePartController.getById.bind(returSparePartController),
     });
@@ -96,35 +81,18 @@ export async function returSparePartRoutes(fastify: FastifyInstance) {
             summary: "Create retur spare part",
             description: "Create new retur spare part with optional image upload",
             consumes: ["multipart/form-data"],
-            body: {
-                type: "object",
-                required: ["date", "shipper", "source_spare_part", "list_spare_part"],
-                properties: {
-                    date: { type: "string", format: "date" },
-                    shipper: { type: "string" },
-                    source_spare_part: { type: "string" },
-                    list_spare_part: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                name: { type: "string" },
-                                qty: { type: "integer" },
-                                condition: { type: "string" },
-                            },
-                        },
-                    },
-                    image: { type: "string", format: "binary" },
-                    notes: { type: "string" },
-                },
-            },
+            // Body validation is handled in controller with Zod schema
+            // Fastify cannot validate multipart/form-data body schema directly
+            // Remove body schema to avoid validation errors
             response: {
                 201: {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: { type: "object", additionalProperties: true },
                     },
+                    additionalProperties: true,
                 },
             },
         },
@@ -145,34 +113,18 @@ export async function returSparePartRoutes(fastify: FastifyInstance) {
                 },
                 required: ["id"],
             },
-            body: {
-                type: "object",
-                properties: {
-                    date: { type: "string", format: "date" },
-                    shipper: { type: "string" },
-                    source_spare_part: { type: "string" },
-                    list_spare_part: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                name: { type: "string" },
-                                qty: { type: "integer" },
-                                condition: { type: "string" },
-                            },
-                        },
-                    },
-                    image: { type: "string", format: "binary" },
-                    notes: { type: "string" },
-                },
-            },
+            // Body validation is handled in controller with Zod schema
+            // Fastify cannot validate multipart/form-data body schema directly
+            // Remove body schema to avoid validation errors
             response: {
                 200: {
                     type: "object",
                     properties: {
                         success: { type: "boolean" },
-                        data: { type: "object" },
+                        message: { type: "string" },
+                        data: { type: "object", additionalProperties: true },
                     },
+                    additionalProperties: true,
                 },
             },
         },

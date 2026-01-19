@@ -47,13 +47,29 @@ export class ReturSparePartService {
             prisma.returSparePart.count({ where }),
         ]);
 
+        // Transform data to plain objects - ensure proper serialization (following address/problem-master pattern)
+        const transformedData = data.map((item) => {
+            if (!item) return null;
+            return {
+                id: Number(item.id),
+                date: item.date ? new Date(item.date).toISOString().split("T")[0] : null,
+                shipper: String(item.shipper || ""),
+                source_spare_part: String(item.source_spare_part || ""),
+                list_spare_part: item.list_spare_part ? String(item.list_spare_part) : null, // Now string, not JSON
+                image: item.image ? String(item.image) : null,
+                notes: item.notes ? String(item.notes) : null,
+                created_at: item.created_at ? new Date(item.created_at).toISOString() : null,
+                updated_at: item.updated_at ? new Date(item.updated_at).toISOString() : null,
+            };
+        }).filter((item) => item !== null);
+
         return {
-            data: data.map(this.transformRetur),
+            data: transformedData,
             pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
+                page: Number(page),
+                limit: Number(limit),
+                total: Number(total),
+                totalPages: Math.ceil(Number(total) / Number(limit)),
             },
         };
     }
@@ -74,11 +90,11 @@ export class ReturSparePartService {
         const retur = await prisma.returSparePart.create({
             data: {
                 date: new Date(data.date),
-                shipper: data.shipper,
-                source_spare_part: data.source_spare_part,
-                list_spare_part: data.list_spare_part as any,
-                image: data.image ? (typeof data.image === "string" ? JSON.parse(data.image) : data.image) : null,
-                notes: data.notes || null,
+                shipper: String(data.shipper),
+                source_spare_part: String(data.source_spare_part),
+                list_spare_part: data.list_spare_part ? String(data.list_spare_part) : null, // Now string, not JSON
+                image: data.image ? String(data.image) : null, // Image is now single URL string
+                notes: data.notes ? String(data.notes) : null,
             },
         });
 
@@ -97,19 +113,8 @@ export class ReturSparePartService {
 
         // Delete old image if updating
         if (data.image && existing.image && data.image !== existing.image) {
-            // If existing.image is JSON, extract URL
-            let oldImageUrl: string | null = null;
-            try {
-                const oldImage = typeof existing.image === "string" ? JSON.parse(existing.image) : existing.image;
-                if (Array.isArray(oldImage) && oldImage.length > 0) {
-                    oldImageUrl = oldImage[0];
-                } else if (typeof oldImage === "string") {
-                    oldImageUrl = oldImage;
-                }
-            } catch {
-                // Ignore parse errors
-            }
-
+            // Image is now single URL string (not JSON)
+            const oldImageUrl = typeof existing.image === "string" ? existing.image : null;
             if (oldImageUrl) {
                 await deleteImageFile(oldImageUrl);
             }
@@ -119,17 +124,15 @@ export class ReturSparePartService {
             where: { id },
             data: {
                 ...(data.date && { date: new Date(data.date) }),
-                ...(data.shipper && { shipper: data.shipper }),
-                ...(data.source_spare_part && { source_spare_part: data.source_spare_part }),
-                ...(data.list_spare_part && { list_spare_part: data.list_spare_part as any }),
-                ...(data.image !== undefined && {
-                    image: data.image
-                        ? typeof data.image === "string"
-                            ? JSON.parse(data.image)
-                            : data.image
-                        : null,
+                ...(data.shipper && { shipper: String(data.shipper) }),
+                ...(data.source_spare_part && { source_spare_part: String(data.source_spare_part) }),
+                ...(data.list_spare_part !== undefined && {
+                    list_spare_part: data.list_spare_part ? String(data.list_spare_part) : null, // Now string, not JSON
                 }),
-                ...(data.notes !== undefined && { notes: data.notes }),
+                ...(data.image !== undefined && {
+                    image: data.image ? String(data.image) : null, // Image is now single URL string
+                }),
+                ...(data.notes !== undefined && { notes: data.notes ? String(data.notes) : null }),
             },
         });
 
@@ -146,19 +149,11 @@ export class ReturSparePartService {
             throw new Error("Retur spare part not found");
         }
 
-        // Delete associated image
+        // Delete associated image (now single URL string)
         if (retur.image) {
-            try {
-                const imageData = typeof retur.image === "string" ? JSON.parse(retur.image) : retur.image;
-                if (Array.isArray(imageData)) {
-                    for (const imageUrl of imageData) {
-                        await deleteImageFile(imageUrl);
-                    }
-                } else if (typeof imageData === "string") {
-                    await deleteImageFile(imageData);
-                }
-            } catch {
-                // Ignore errors
+            const imageUrl = typeof retur.image === "string" ? retur.image : null;
+            if (imageUrl) {
+                await deleteImageFile(imageUrl);
             }
         }
 
@@ -227,17 +222,25 @@ export class ReturSparePartService {
     }
 
     private transformRetur(retur: any) {
-        return {
-            id: retur.id,
-            date: retur.date.toISOString().split("T")[0],
-            shipper: retur.shipper,
-            source_spare_part: retur.source_spare_part,
-            list_spare_part: retur.list_spare_part,
-            image: retur.image,
-            notes: retur.notes,
-            created_at: retur.created_at.toISOString(),
-            updated_at: retur.updated_at.toISOString(),
+        if (!retur) {
+            throw new Error("Retur data is null or undefined");
+        }
+        
+        // Ensure proper serialization with explicit type conversions
+        // Create plain object to avoid serialization issues
+        const result: any = {
+            id: Number(retur.id) || 0,
+            date: retur.date ? new Date(retur.date).toISOString().split("T")[0] : null,
+            shipper: String(retur.shipper || ""),
+            source_spare_part: String(retur.source_spare_part || ""),
+            list_spare_part: retur.list_spare_part ? String(retur.list_spare_part) : null, // Now string, not JSON
+            image: retur.image ? String(retur.image) : null, // Image is now single URL string
+            notes: retur.notes ? String(retur.notes) : null,
+            created_at: retur.created_at ? new Date(retur.created_at).toISOString() : null,
+            updated_at: retur.updated_at ? new Date(retur.updated_at).toISOString() : null,
         };
+
+        return result;
     }
 }
 
