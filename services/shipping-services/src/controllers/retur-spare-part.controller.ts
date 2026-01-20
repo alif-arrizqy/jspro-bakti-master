@@ -155,6 +155,19 @@ export class ReturSparePartController {
         }
     }
 
+    async getStatistics(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const query = request.query as { startDate?: string; endDate?: string; shipper?: string; source_spare_part?: string };
+            const statistics = await returSparePartService.getStatistics(query);
+            return ResponseHelper.success(reply, "Statistics retrieved successfully", statistics);
+        } catch (error) {
+            return ResponseHelper.handleError(reply, error, "Failed to get statistics", {
+                logger: shippingLogger,
+                context: "Error getting retur statistics",
+            });
+        }
+    }
+
     async exportToExcel(request: FastifyRequest, reply: FastifyReply) {
         try {
             const query = ReturExportQuerySchema.parse(request.query);

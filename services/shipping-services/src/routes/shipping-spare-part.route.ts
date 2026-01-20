@@ -116,6 +116,42 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
         handler: shippingSparePartController.exportToExcel.bind(shippingSparePartController),
     });
 
+    // GET /api/v1/shipping-spare-part/statistics - Get statistics
+    fastify.get("/statistics", {
+        schema: {
+            tags: ["Shipping Spare Part"],
+            summary: "Get shipping statistics",
+            description: "Get statistics/rekapan data shipping per status (REQUEST_GUDANG, PROSES_KIRIM, SELESAI)",
+            querystring: {
+                type: "object",
+                properties: {
+                    site_id: { type: "string" },
+                    startDate: { type: "string", format: "date" },
+                    endDate: { type: "string", format: "date" },
+                },
+            },
+            response: {
+                200: {
+                    type: "object",
+                    properties: {
+                        success: { type: "boolean" },
+                        message: { type: "string" },
+                        data: {
+                            type: "object",
+                            properties: {
+                                request_gudang: { type: "integer" },
+                                proses_kirim: { type: "integer" },
+                                selesai: { type: "integer" },
+                                total: { type: "integer" },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        handler: shippingSparePartController.getStatistics.bind(shippingSparePartController),
+    });
+
     // GET /api/v1/shipping-spare-part/:id - Get by ID
     fastify.get("/:id", {
         schema: {

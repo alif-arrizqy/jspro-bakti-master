@@ -247,6 +247,66 @@ export class ShippingSparePartService {
         shippingLogger.info({ shippingId: id }, "Shipping deleted");
     }
 
+    async getStatistics(query?: { site_id?: string; startDate?: string; endDate?: string }) {
+        const { site_id, startDate, endDate } = query || {};
+
+        // Build base where clause for filtering
+        const baseWhere: Prisma.ShippingSparePartWhereInput = {
+            ...(site_id && { site_id }),
+            ...(startDate &&
+                endDate && {
+                    date: {
+                        gte: new Date(startDate),
+                        lte: new Date(endDate),
+                    },
+                }),
+            ...(startDate &&
+                !endDate && {
+                    date: {
+                        gte: new Date(startDate),
+                    },
+                }),
+            ...(!startDate &&
+                endDate && {
+                    date: {
+                        lte: new Date(endDate),
+                    },
+                }),
+        };
+
+        // Get counts for each status
+        const [requestGudang, prosesKirim, selesai, total] = await Promise.all([
+            prisma.shippingSparePart.count({
+                where: {
+                    ...baseWhere,
+                    status: "REQUEST_GUDANG",
+                },
+            }),
+            prisma.shippingSparePart.count({
+                where: {
+                    ...baseWhere,
+                    status: "PROSES_KIRIM",
+                },
+            }),
+            prisma.shippingSparePart.count({
+                where: {
+                    ...baseWhere,
+                    status: "SELESAI",
+                },
+            }),
+            prisma.shippingSparePart.count({
+                where: baseWhere,
+            }),
+        ]);
+
+        return {
+            request_gudang: Number(requestGudang),
+            proses_kirim: Number(prosesKirim),
+            selesai: Number(selesai),
+            total: Number(total),
+        };
+    }
+
     async exportToExcel(query: ShippingSparePartQuery) {
         // Get all data without pagination for export
         const { status, site_id, address_id, problem_id, startDate, endDate, search } = query;

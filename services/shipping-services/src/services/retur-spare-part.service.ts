@@ -164,6 +164,46 @@ export class ReturSparePartService {
         shippingLogger.info({ returId: id }, "Retur deleted");
     }
 
+    async getStatistics(query?: { startDate?: string; endDate?: string; shipper?: string; source_spare_part?: string }) {
+        const { startDate, endDate, shipper, source_spare_part } = query || {};
+
+        // Build base where clause for filtering
+        const baseWhere: Prisma.ReturSparePartWhereInput = {
+            ...(startDate &&
+                endDate && {
+                    date: {
+                        gte: new Date(startDate),
+                        lte: new Date(endDate),
+                    },
+                }),
+            ...(startDate &&
+                !endDate && {
+                    date: {
+                        gte: new Date(startDate),
+                    },
+                }),
+            ...(!startDate &&
+                endDate && {
+                    date: {
+                        lte: new Date(endDate),
+                    },
+                }),
+            ...(shipper && { shipper: { contains: shipper, mode: "insensitive" } }),
+            ...(source_spare_part && {
+                source_spare_part: { contains: source_spare_part, mode: "insensitive" },
+            }),
+        };
+
+        // Get total count
+        const total = await prisma.returSparePart.count({
+            where: baseWhere,
+        });
+
+        return {
+            total: Number(total),
+        };
+    }
+
     async exportToExcel(query: ReturSparePartQuery) {
         // Get all data without pagination for export
         const { startDate, endDate, shipper, source_spare_part, search } = query;

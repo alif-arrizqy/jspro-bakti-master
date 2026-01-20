@@ -200,6 +200,19 @@ export class ShippingSparePartController {
         }
     }
 
+    async getStatistics(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const query = request.query as { site_id?: string; startDate?: string; endDate?: string };
+            const statistics = await shippingSparePartService.getStatistics(query);
+            return ResponseHelper.success(reply, "Statistics retrieved successfully", statistics);
+        } catch (error) {
+            return ResponseHelper.handleError(reply, error, "Failed to get statistics", {
+                logger: shippingLogger,
+                context: "Error getting shipping statistics",
+            });
+        }
+    }
+
     async exportToExcel(request: FastifyRequest, reply: FastifyReply) {
         try {
             const query = ShippingExportQuerySchema.parse(request.query);
