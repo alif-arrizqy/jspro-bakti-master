@@ -1,0 +1,72 @@
+Project "Database Shipping Docs" {
+  database_type: 'PostgreSQL'
+  Note: '''
+    # Dokumentasi Database Shipping
+    **Database untuk Tracking Spare Part**
+  '''
+}
+
+Table shipping_spare_part {
+    id int [pk, increment]
+    date date [note: "Tanggal dari data shipping spare part, contohnya 2025-01-01"]
+    site_id varchar [note: "ID dari site, contohnya PAP9999"]
+    address_id int [note: "ID dari address, contohnya 1"]
+    sparepart_note text [note: "Catatan spare part, contohnya 'Spare part untuk PR#141']
+    problem_id int [note: "ID dari problem, contohnya 1"]
+    ticket_number varchar [note: "Nomor tiket, contohnya '1234567890']
+    ticket_image text [note: "Foto tiket, contohnya 'https://example.com/ticket.jpg']
+    status ENUM('REQUEST_GUDANG', 'PROSES_KIRIM', 'SELESAI') [note: "Status shipping spare part, contohnya 'request gudang', 'proses kirim', 'selesai']
+    resi_number varchar [note: "Nomor resi, contohnya '1234567890']
+    resi_image text [note: "Foto resi, contohnya 'https://example.com/resi.jpg']
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        (site_id, date) [unique, name: "idx_sla_bakti_site_date"]
+        date [name: "idx_sla_bakti_date"]
+        site_id [name: "idx_sla_bakti_site_id"]
+        problem_id [name: "idx_sla_bakti_problem_id"]
+    }
+}
+
+Table address {
+    id int [pk, increment]
+    province ENUM('PAPUA BARAT', 'PAPUA BARAT DAYA', 'PAPUA SELATAN', 'PAPUA', 'MALUKU', 'MALUKU UTARA') [note: "Provinsi, contohnya 'PAPUA BARAT']
+    cluster varchar [note: "Cluster, contohnya 'Cluster 1']
+    address_shipping text [note: "Alamat pengiriman, contohnya 'Jl. Raya No. 123']
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        province [name: "idx_address_province"]
+        cluster [name: "idx_address_cluster"]
+    }
+}
+
+Table problem_master {
+    id int [pk, increment]
+    problem_name varchar [note: "Nama problem, contohnya 'Problem 1']
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        problem_name [name: "idx_problem_master_problem_name"]
+    }
+}
+
+Table retur_spare_part {
+    id int [pk, increment]
+    date date [note: "Tanggal dari data retur spare part, contohnya 2025-01-01"]
+    shipper varchar [note: "Nama pengirim, contohnya 'PT. Bakti']
+    source_spare_part varchar [note: "Sumber spare part, contohnya 'Gudang']
+    list_spare_part jsonb [note: "Daftar spare part, contohnya '[{"name": "Spare part 1", "qty": 1, "condition": "Baik"}]']
+    image jsonb [note: "Foto retur spare part, contohnya 'https://example.com/retur.jpg']
+    notes text [note: "Catatan retur spare part, contohnya 'Spare part sudah rusak']
+    created_at timestamptz [default: `now()`, note: "Waktu row dibuat"]
+    updated_at timestamptz [default: `now()`, note: "Waktu row diupdate"]
+
+    Indexes {
+        date [name: "idx_retur_spare_part_date"]
+        shipper [name: "idx_retur_spare_part_shipper"]
+    }
+}
