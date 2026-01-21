@@ -4,6 +4,7 @@ import type { ReturSparePartCreate, ReturSparePartUpdate, ReturSparePartQuery } 
 import { shippingLogger } from "../utils/logger";
 import { deleteImageFile } from "../utils/file-upload.util";
 import { generateReturSparePartExcel } from "../utils/excel.util";
+import { generateReturSparePartPDF } from "../utils/pdf.util";
 
 export class ReturSparePartService {
     async getAll(query: ReturSparePartQuery) {
@@ -112,11 +113,17 @@ export class ReturSparePartService {
         }
 
         // Delete old image if updating
+        // Only delete if there's a new image and it's different from the existing one
         if (data.image && existing.image && data.image !== existing.image) {
             // Image is now single URL string (not JSON)
             const oldImageUrl = typeof existing.image === "string" ? existing.image : null;
             if (oldImageUrl) {
-                await deleteImageFile(oldImageUrl);
+                try {
+                    await deleteImageFile(oldImageUrl);
+                    shippingLogger.info({ returId: id, oldImage: oldImageUrl }, "Old retur image deleted");
+                } catch (error) {
+                    shippingLogger.warn({ error, returId: id, imagePath: oldImageUrl }, "Failed to delete old retur image, continuing with update");
+                }
             }
         }
 
@@ -149,11 +156,13 @@ export class ReturSparePartService {
             throw new Error("Retur spare part not found");
         }
 
-        // Delete associated image (now single URL string)
+        // Delete associated image before deleting record
         if (retur.image) {
             const imageUrl = typeof retur.image === "string" ? retur.image : null;
             if (imageUrl) {
-                await deleteImageFile(imageUrl);
+                await deleteImageFile(imageUrl).catch((error) => {
+                    shippingLogger.warn({ error, returId: id, image: imageUrl }, "Failed to delete retur image");
+                });
             }
         }
 
@@ -242,6 +251,48 @@ export class ReturSparePartService {
 
         const buffer = await generateReturSparePartExcel(data);
         const filename = this.generateExportFilename(query);
+
+        return { buffer, filename };
+    }
+
+    async exportToPDF(query: ReturSparePartQuery) {
+        // Get all data without pagination for export
+        const { startDate, endDate, shipper, source_spare_part, search } = query;
+
+        const where: Prisma.ReturSparePartWhereInput = {
+            ...(startDate &&
+                endDate && {
+                    date: {
+                        gte: new Date(startDate),
+                        lte: new Date(endDate),
+                    },
+                }),
+            ...(startDate &&
+                !endDate && {
+                    date: {
+                        gte: new Date(startDate),
+                    },
+                }),
+            ...(!startDate &&
+                endDate && {
+                    date: {
+                        lte: new Date(endDate),
+                    },
+                }),
+            ...(shipper && { shipper: { contains: shipper, mode: "insensitive" } }),
+            ...(source_spare_part && {
+                source_spare_part: { contains: source_spare_part, mode: "insensitive" },
+            }),
+            ...(search && { notes: { contains: search, mode: "insensitive" } }),
+        };
+
+        const data = await prisma.returSparePart.findMany({
+            where,
+            orderBy: { date: "desc" },
+        });
+
+        const buffer = await generateReturSparePartPDF(data);
+        const filename = this.generateExportFilename(query).replace('.xlsx', '.pdf');
 
         return { buffer, filename };
     }

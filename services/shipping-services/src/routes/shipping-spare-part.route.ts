@@ -21,6 +21,11 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     startDate: { type: "string", format: "date" },
                     endDate: { type: "string", format: "date" },
                     search: { type: "string" },
+                    province: {
+                        type: "string",
+                        enum: ["PAPUA_BARAT", "PAPUA_BARAT_DAYA", "PAPUA_SELATAN", "PAPUA", "MALUKU", "MALUKU_UTARA"],
+                    },
+                    cluster: { type: "string" },
                     page: { type: "integer", default: 1 },
                     limit: { type: "integer", default: 20 },
                 },
@@ -46,6 +51,11 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     startDate: { type: "string", format: "date" },
                     endDate: { type: "string", format: "date" },
                     search: { type: "string" },
+                    province: {
+                        type: "string",
+                        enum: ["PAPUA_BARAT", "PAPUA_BARAT_DAYA", "PAPUA_SELATAN", "PAPUA", "MALUKU", "MALUKU_UTARA"],
+                    },
+                    cluster: { type: "string" },
                     page: { type: "integer", default: 1 },
                     limit: { type: "integer", default: 20 },
                 },
@@ -71,6 +81,11 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     startDate: { type: "string", format: "date" },
                     endDate: { type: "string", format: "date" },
                     search: { type: "string" },
+                    province: {
+                        type: "string",
+                        enum: ["PAPUA_BARAT", "PAPUA_BARAT_DAYA", "PAPUA_SELATAN", "PAPUA", "MALUKU", "MALUKU_UTARA"],
+                    },
+                    cluster: { type: "string" },
                     page: { type: "integer", default: 1 },
                     limit: { type: "integer", default: 20 },
                 },
@@ -100,6 +115,11 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
                     startDate: { type: "string", format: "date" },
                     endDate: { type: "string", format: "date" },
                     search: { type: "string" },
+                    province: {
+                        type: "string",
+                        enum: ["PAPUA_BARAT", "PAPUA_BARAT_DAYA", "PAPUA_SELATAN", "PAPUA", "MALUKU", "MALUKU_UTARA"],
+                    },
+                    cluster: { type: "string" },
                 },
             },
             response: {
@@ -114,6 +134,46 @@ export async function shippingSparePartRoutes(fastify: FastifyInstance) {
             },
         },
         handler: shippingSparePartController.exportToExcel.bind(shippingSparePartController),
+    });
+
+    // GET /api/v1/shipping-spare-part/export-pdf - Export to PDF
+    fastify.get("/export-pdf", {
+        schema: {
+            tags: ["Shipping Spare Part"],
+            summary: "Export shipping spare parts to PDF",
+            description: "Export shipping spare parts data to PDF file",
+            querystring: {
+                type: "object",
+                properties: {
+                    status: {
+                        type: "string",
+                        enum: ["REQUEST_GUDANG", "PROSES_KIRIM", "SELESAI"],
+                    },
+                    site_id: { type: "string" },
+                    address_id: { type: "integer" },
+                    problem_id: { type: "integer" },
+                    startDate: { type: "string", format: "date" },
+                    endDate: { type: "string", format: "date" },
+                    search: { type: "string" },
+                    province: {
+                        type: "string",
+                        enum: ["PAPUA_BARAT", "PAPUA_BARAT_DAYA", "PAPUA_SELATAN", "PAPUA", "MALUKU", "MALUKU_UTARA"],
+                    },
+                    cluster: { type: "string" },
+                },
+            },
+            response: {
+                200: {
+                    description: "PDF file download",
+                    content: {
+                        "application/pdf": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+            },
+        },
+        handler: shippingSparePartController.exportToPDF.bind(shippingSparePartController),
     });
 
     // GET /api/v1/shipping-spare-part/statistics - Get statistics

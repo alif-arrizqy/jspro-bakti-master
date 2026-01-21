@@ -183,6 +183,22 @@ export class ReturSparePartController {
             });
         }
     }
+
+    async exportToPDF(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const query = ReturExportQuerySchema.parse(request.query);
+            const { buffer, filename } = await returSparePartService.exportToPDF(query);
+
+            reply.header("Content-Type", "application/pdf");
+            reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+            return reply.send(buffer);
+        } catch (error) {
+            return ResponseHelper.handleError(reply, error, "Failed to export to PDF", {
+                logger: shippingLogger,
+                context: "Error exporting retur spare parts to PDF",
+            });
+        }
+    }
 }
 
 export const returSparePartController = new ReturSparePartController();

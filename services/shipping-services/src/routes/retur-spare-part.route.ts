@@ -56,6 +56,36 @@ export async function returSparePartRoutes(fastify: FastifyInstance) {
         handler: returSparePartController.exportToExcel.bind(returSparePartController),
     });
 
+    // GET /api/v1/retur-spare-part/export-pdf - Export to PDF
+    fastify.get("/export-pdf", {
+        schema: {
+            tags: ["Retur Spare Part"],
+            summary: "Export retur spare parts to PDF",
+            description: "Export retur spare parts data to PDF file",
+            querystring: {
+                type: "object",
+                properties: {
+                    startDate: { type: "string", format: "date" },
+                    endDate: { type: "string", format: "date" },
+                    shipper: { type: "string" },
+                    source_spare_part: { type: "string" },
+                    search: { type: "string" },
+                },
+            },
+            response: {
+                200: {
+                    description: "PDF file download",
+                    content: {
+                        "application/pdf": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+            },
+        },
+        handler: returSparePartController.exportToPDF.bind(returSparePartController),
+    });
+
     // GET /api/v1/retur-spare-part/statistics - Get statistics
     fastify.get("/statistics", {
         schema: {

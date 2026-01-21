@@ -8,11 +8,12 @@ import type {
 import { shippingLogger } from "../utils/logger";
 import { deleteImageFile } from "../utils/file-upload.util";
 import { generateShippingSparePartExcel } from "../utils/excel.util";
+import { generateShippingSparePartPDF } from "../utils/pdf.util";
 import { sitesService } from "./sites.service";
 
 export class ShippingSparePartService {
     async getAll(query: ShippingSparePartQuery) {
-        const { page, limit, status, site_id, address_id, problem_id, startDate, endDate, search } = query;
+        const { page, limit, status, site_id, address_id, problem_id, province, cluster, startDate, endDate, search } = query;
         const skip = (page - 1) * limit;
 
         // Handle status filter (can be single or array)
@@ -30,25 +31,40 @@ export class ShippingSparePartService {
             ...(site_id && { site_id }),
             ...(address_id && { address_id }),
             ...(problem_id && { problem_id }),
+            ...(province && {
+                address: {
+                    province: province,
+                },
+            }),
+            ...(cluster && {
+                address: province
+                    ? {
+                          province: province,
+                          cluster: { contains: cluster, mode: "insensitive" },
+                      }
+                    : {
+                          cluster: { contains: cluster, mode: "insensitive" },
+                      },
+            }),
             ...(startDate &&
                 endDate && {
-                    date: {
-                        gte: new Date(startDate),
-                        lte: new Date(endDate),
-                    },
-                }),
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate),
+                },
+            }),
             ...(startDate &&
                 !endDate && {
-                    date: {
-                        gte: new Date(startDate),
-                    },
-                }),
+                date: {
+                    gte: new Date(startDate),
+                },
+            }),
             ...(!startDate &&
                 endDate && {
-                    date: {
-                        lte: new Date(endDate),
-                    },
-                }),
+                date: {
+                    lte: new Date(endDate),
+                },
+            }),
             ...(search && {
                 OR: [
                     { ticket_number: { contains: search, mode: "insensitive" } },
@@ -71,35 +87,64 @@ export class ShippingSparePartService {
             prisma.shippingSparePart.count({ where }),
         ]);
 
-        // Transform data to plain objects - ensure proper serialization (following address/problem-master pattern)
+        // Get unique site_ids and fetch site data from sites-service
+        const uniqueSiteIds = [...new Set(data.map((item) => item.site_id).filter((id): id is string => !!id))];
+        const siteDataMap = new Map<string, { site_name: string; pr_code: string | null }>();
+
+        // Fetch site data for all unique site_ids in parallel
+        await Promise.all(
+            uniqueSiteIds.map(async (siteId) => {
+                try {
+                    const siteInfo = await sitesService.getSiteById(siteId);
+                    if (siteInfo) {
+                        siteDataMap.set(siteId, {
+                            site_name: siteInfo.siteName || "",
+                            pr_code: siteInfo.prCode || null,
+                        });
+                    }
+                } catch (error) {
+                    shippingLogger.warn({ error, siteId }, "Failed to fetch site data from sites-service");
+                }
+            })
+        );
+
+        // Transform data to plain objects - ensure proper serialization (nested structure)
         const transformedData = data.map((item) => {
             if (!item) return null;
+            const siteData = item.site_id ? siteDataMap.get(item.site_id) : null;
+
             return {
                 id: Number(item.id),
                 date: item.date ? new Date(item.date).toISOString().split("T")[0] : null,
-                site_id: item.site_id ? String(item.site_id) : null,
-                address_id: item.address_id ? Number(item.address_id) : null,
+                site: {
+                    site_id: item.site_id ? String(item.site_id) : null,
+                    site_name: siteData?.site_name || null,
+                    pr_code: siteData?.pr_code || null,
+                },
                 address: item.address
                     ? {
-                          id: Number(item.address.id),
-                          province: String(item.address.province || ""),
-                          cluster: item.address.cluster ? String(item.address.cluster) : null,
-                          address_shipping: String(item.address.address_shipping || ""),
-                      }
+                        address_id: Number(item.address.id),
+                        province: String(item.address.province || ""),
+                        cluster: item.address.cluster ? String(item.address.cluster) : null,
+                        address_shipping: String(item.address.address_shipping || ""),
+                    }
                     : null,
                 sparepart_note: item.sparepart_note ? String(item.sparepart_note) : null,
-                problem_id: item.problem_id ? Number(item.problem_id) : null,
                 problem: item.problem
                     ? {
-                          id: Number(item.problem.id),
-                          problem_name: String(item.problem.problem_name || ""),
-                      }
+                        problem_id: Number(item.problem.id),
+                        problem_name: String(item.problem.problem_name || ""),
+                    }
                     : null,
-                ticket_number: item.ticket_number ? String(item.ticket_number) : null,
-                ticket_image: item.ticket_image ? String(item.ticket_image) : null,
+                ticket: {
+                    ticket_number: item.ticket_number ? String(item.ticket_number) : null,
+                    ticket_image: item.ticket_image ? String(item.ticket_image) : null,
+                },
+                resi: {
+                    resi_number: item.resi_number ? String(item.resi_number) : null,
+                    resi_image: item.resi_image ? String(item.resi_image) : null,
+                },
                 status: item.status ? String(item.status) : null,
-                resi_number: item.resi_number ? String(item.resi_number) : null,
-                resi_image: item.resi_image ? String(item.resi_image) : null,
                 created_at: item.created_at ? new Date(item.created_at).toISOString() : null,
                 updated_at: item.updated_at ? new Date(item.updated_at).toISOString() : null,
             };
@@ -143,7 +188,23 @@ export class ShippingSparePartService {
             throw new Error("Shipping spare part not found");
         }
 
-        return this.transformShipping(shipping);
+        // Fetch site data from sites-service if site_id exists
+        let siteData: { site_name: string; pr_code: string | null } | null = null;
+        if (shipping.site_id) {
+            try {
+                const siteInfo = await sitesService.getSiteById(shipping.site_id);
+                if (siteInfo) {
+                    siteData = {
+                        site_name: siteInfo.siteName || "",
+                        pr_code: siteInfo.prCode || null,
+                    };
+                }
+            } catch (error) {
+                shippingLogger.warn({ error, siteId: shipping.site_id }, "Failed to fetch site data from sites-service");
+            }
+        }
+
+        return this.transformShipping(shipping, siteData);
     }
 
     async create(data: ShippingSparePartCreate) {
@@ -174,7 +235,24 @@ export class ShippingSparePartService {
         });
 
         shippingLogger.info({ shippingId: shipping.id, status: shipping.status }, "Shipping created");
-        return this.transformShipping(shipping);
+
+        // Fetch site data from sites-service if site_id exists
+        let siteData: { site_name: string; pr_code: string | null } | null = null;
+        if (shipping.site_id) {
+            try {
+                const siteInfo = await sitesService.getSiteById(shipping.site_id);
+                if (siteInfo) {
+                    siteData = {
+                        site_name: siteInfo.siteName || "",
+                        pr_code: siteInfo.prCode || null,
+                    };
+                }
+            } catch (error) {
+                shippingLogger.warn({ error, siteId: shipping.site_id }, "Failed to fetch site data from sites-service");
+            }
+        }
+
+        return this.transformShipping(shipping, siteData);
     }
 
     async update(id: number, data: ShippingSparePartUpdate) {
@@ -201,9 +279,15 @@ export class ShippingSparePartService {
             }
         }
 
-        // Delete old resi_image if updating
+        // Delete old resi_image if updating with new image
+        // Only delete if there's a new image and it's different from the existing one
         if (data.resi_image && existing.resi_image && data.resi_image !== existing.resi_image) {
-            await deleteImageFile(existing.resi_image);
+            try {
+                await deleteImageFile(existing.resi_image);
+                shippingLogger.info({ shippingId: id, oldImage: existing.resi_image }, "Old resi image deleted");
+            } catch (error) {
+                shippingLogger.warn({ error, shippingId: id, imagePath: existing.resi_image }, "Failed to delete old resi image, continuing with update");
+            }
         }
 
         const shipping = await prisma.shippingSparePart.update({
@@ -220,7 +304,24 @@ export class ShippingSparePartService {
         });
 
         shippingLogger.info({ shippingId: id, status: shipping.status }, "Shipping updated");
-        return this.transformShipping(shipping);
+
+        // Fetch site data from sites-service if site_id exists
+        let siteData: { site_name: string; pr_code: string | null } | null = null;
+        if (shipping.site_id) {
+            try {
+                const siteInfo = await sitesService.getSiteById(shipping.site_id);
+                if (siteInfo) {
+                    siteData = {
+                        site_name: siteInfo.siteName || "",
+                        pr_code: siteInfo.prCode || null,
+                    };
+                }
+            } catch (error) {
+                shippingLogger.warn({ error, siteId: shipping.site_id }, "Failed to fetch site data from sites-service");
+            }
+        }
+
+        return this.transformShipping(shipping, siteData);
     }
 
     async delete(id: number) {
@@ -232,13 +333,27 @@ export class ShippingSparePartService {
             throw new Error("Shipping spare part not found");
         }
 
-        // Delete associated images
+        // Delete associated images before deleting record
+        const deletePromises: Promise<void>[] = [];
+
         if (shipping.ticket_image) {
-            await deleteImageFile(shipping.ticket_image);
+            deletePromises.push(
+                deleteImageFile(shipping.ticket_image).catch((error) => {
+                    shippingLogger.warn({ error, shippingId: id, image: shipping.ticket_image }, "Failed to delete ticket image");
+                })
+            );
         }
+
         if (shipping.resi_image) {
-            await deleteImageFile(shipping.resi_image);
+            deletePromises.push(
+                deleteImageFile(shipping.resi_image).catch((error) => {
+                    shippingLogger.warn({ error, shippingId: id, image: shipping.resi_image }, "Failed to delete resi image");
+                })
+            );
         }
+
+        // Wait for all image deletions to complete (or fail)
+        await Promise.allSettled(deletePromises);
 
         await prisma.shippingSparePart.delete({
             where: { id },
@@ -255,23 +370,23 @@ export class ShippingSparePartService {
             ...(site_id && { site_id }),
             ...(startDate &&
                 endDate && {
-                    date: {
-                        gte: new Date(startDate),
-                        lte: new Date(endDate),
-                    },
-                }),
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate),
+                },
+            }),
             ...(startDate &&
                 !endDate && {
-                    date: {
-                        gte: new Date(startDate),
-                    },
-                }),
+                date: {
+                    gte: new Date(startDate),
+                },
+            }),
             ...(!startDate &&
                 endDate && {
-                    date: {
-                        lte: new Date(endDate),
-                    },
-                }),
+                date: {
+                    lte: new Date(endDate),
+                },
+            }),
         };
 
         // Get counts for each status
@@ -309,7 +424,7 @@ export class ShippingSparePartService {
 
     async exportToExcel(query: ShippingSparePartQuery) {
         // Get all data without pagination for export
-        const { status, site_id, address_id, problem_id, startDate, endDate, search } = query;
+        const { status, site_id, address_id, problem_id, province, cluster, startDate, endDate, search } = query;
 
         let statusFilter: Prisma.ShippingSparePartWhereInput["status"] | undefined;
         if (status) {
@@ -325,25 +440,40 @@ export class ShippingSparePartService {
             ...(site_id && { site_id }),
             ...(address_id && { address_id }),
             ...(problem_id && { problem_id }),
+            ...(province && {
+                address: {
+                    province: province,
+                },
+            }),
+            ...(cluster && {
+                address: province
+                    ? {
+                          province: province,
+                          cluster: { contains: cluster, mode: "insensitive" },
+                      }
+                    : {
+                          cluster: { contains: cluster, mode: "insensitive" },
+                      },
+            }),
             ...(startDate &&
                 endDate && {
-                    date: {
-                        gte: new Date(startDate),
-                        lte: new Date(endDate),
-                    },
-                }),
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate),
+                },
+            }),
             ...(startDate &&
                 !endDate && {
-                    date: {
-                        gte: new Date(startDate),
-                    },
-                }),
+                date: {
+                    gte: new Date(startDate),
+                },
+            }),
             ...(!startDate &&
                 endDate && {
-                    date: {
-                        lte: new Date(endDate),
-                    },
-                }),
+                date: {
+                    lte: new Date(endDate),
+                },
+            }),
             ...(search && {
                 OR: [
                     { ticket_number: { contains: search, mode: "insensitive" } },
@@ -361,8 +491,155 @@ export class ShippingSparePartService {
             orderBy: { date: "desc" },
         });
 
-        const buffer = await generateShippingSparePartExcel(data, query);
+        // Get unique site_ids and fetch site data from sites-service
+        const uniqueSiteIds = [...new Set(data.map((item) => item.site_id).filter((id): id is string => !!id))];
+        const siteDataMap = new Map<string, { site_name: string; pr_code: string | null }>();
+
+        // Fetch site data for all unique site_ids in parallel
+        await Promise.all(
+            uniqueSiteIds.map(async (siteId) => {
+                try {
+                    const siteInfo = await sitesService.getSiteById(siteId);
+                    if (siteInfo) {
+                        siteDataMap.set(siteId, {
+                            site_name: siteInfo.siteName || "",
+                            pr_code: siteInfo.prCode || null,
+                        });
+                    }
+                } catch (error) {
+                    shippingLogger.warn({ error, siteId }, "Failed to fetch site data from sites-service");
+                }
+            })
+        );
+
+        // Transform data to include site data
+        const transformedData = data.map((item) => {
+            const siteData = item.site_id ? siteDataMap.get(item.site_id) : null;
+            return {
+                ...item,
+                site_name: siteData?.site_name || null,
+                pr_code: siteData?.pr_code || null,
+            };
+        });
+
+        const buffer = await generateShippingSparePartExcel(transformedData, {
+            startDate: query.startDate,
+            endDate: query.endDate,
+            status: Array.isArray(query.status) ? query.status : query.status ? [query.status] : undefined,
+            province: query.province,
+        });
         const filename = this.generateExportFilename(query);
+
+        return { buffer, filename };
+    }
+
+    async exportToPDF(query: ShippingSparePartQuery) {
+        // Get all data without pagination for export
+        const { status, site_id, address_id, problem_id, province, cluster, startDate, endDate, search } = query;
+
+        let statusFilter: Prisma.ShippingSparePartWhereInput["status"] | undefined;
+        if (status) {
+            if (Array.isArray(status)) {
+                statusFilter = { in: status };
+            } else {
+                statusFilter = status;
+            }
+        }
+
+        const where: Prisma.ShippingSparePartWhereInput = {
+            ...(statusFilter && { status: statusFilter }),
+            ...(site_id && { site_id }),
+            ...(address_id && { address_id }),
+            ...(problem_id && { problem_id }),
+            ...(province && {
+                address: {
+                    province: province,
+                },
+            }),
+            ...(cluster && {
+                address: province
+                    ? {
+                          province: province,
+                          cluster: { contains: cluster, mode: "insensitive" },
+                      }
+                    : {
+                          cluster: { contains: cluster, mode: "insensitive" },
+                      },
+            }),
+            ...(startDate &&
+                endDate && {
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate),
+                },
+            }),
+            ...(startDate &&
+                !endDate && {
+                date: {
+                    gte: new Date(startDate),
+                },
+            }),
+            ...(!startDate &&
+                endDate && {
+                date: {
+                    lte: new Date(endDate),
+                },
+            }),
+            ...(search && {
+                OR: [
+                    { ticket_number: { contains: search, mode: "insensitive" } },
+                    { sparepart_note: { contains: search, mode: "insensitive" } },
+                ],
+            }),
+        };
+
+        const data = await prisma.shippingSparePart.findMany({
+            where,
+            include: {
+                address: true,
+                problem: true,
+            },
+            orderBy: { date: "desc" },
+        });
+
+        // Get unique site_ids and fetch site data from sites-service
+        const uniqueSiteIds = [...new Set(data.map((item) => item.site_id).filter((id): id is string => !!id))];
+        const siteDataMap = new Map<string, { site_name: string; pr_code: string | null }>();
+
+        // Fetch site data for all unique site_ids in parallel
+        await Promise.all(
+            uniqueSiteIds.map(async (siteId) => {
+                try {
+                    const siteInfo = await sitesService.getSiteById(siteId);
+                    if (siteInfo) {
+                        siteDataMap.set(siteId, {
+                            site_name: siteInfo.siteName || "",
+                            pr_code: siteInfo.prCode || null,
+                        });
+                    }
+                } catch (error) {
+                    shippingLogger.warn({ error, siteId }, "Failed to fetch site data from sites-service");
+                }
+            })
+        );
+
+        // Transform data to include site data
+        const transformedData = data.map((item) => {
+            const siteData = item.site_id ? siteDataMap.get(item.site_id) : null;
+            return {
+                ...item,
+                site_name: siteData?.site_name || null,
+                pr_code: siteData?.pr_code || null,
+            };
+        });
+
+        const buffer = await generateShippingSparePartPDF(transformedData, {
+            startDate: query.startDate,
+            endDate: query.endDate,
+            status: Array.isArray(query.status) ? query.status : query.status ? [query.status] : undefined,
+            province: query.province,
+        });
+        const filename = this.generateExportFilename(query).replace('.xlsx', '.pdf');
 
         return { buffer, filename };
     }
@@ -411,50 +688,48 @@ export class ShippingSparePartService {
         return `${filename}.xlsx`;
     }
 
-    private transformShipping(shipping: any) {
+    private transformShipping(shipping: any, siteData?: { site_name: string; pr_code: string | null } | null) {
         if (!shipping) {
             throw new Error("Shipping data is null or undefined");
         }
-        
+
         // Ensure proper serialization with explicit type conversions
-        // Create plain object to avoid serialization issues
+        // Create plain object with nested structure (versi 2)
         const result: any = {
             id: Number(shipping.id) || 0,
             date: shipping.date ? new Date(shipping.date).toISOString().split("T")[0] : null,
-            site_id: shipping.site_id ? String(shipping.site_id) : null,
-            address_id: shipping.address_id ? Number(shipping.address_id) : null,
+            site: {
+                site_id: shipping.site_id ? String(shipping.site_id) : null,
+                site_name: siteData?.site_name || null,
+                pr_code: siteData?.pr_code || null,
+            },
+            address: shipping.address
+                ? {
+                    address_id: Number(shipping.address.id) || 0,
+                    province: String(shipping.address.province || ""),
+                    cluster: shipping.address.cluster ? String(shipping.address.cluster) : null,
+                    address_shipping: String(shipping.address.address_shipping || ""),
+                }
+                : null,
             sparepart_note: shipping.sparepart_note ? String(shipping.sparepart_note) : null,
-            problem_id: shipping.problem_id ? Number(shipping.problem_id) : null,
-            ticket_number: shipping.ticket_number ? String(shipping.ticket_number) : null,
-            ticket_image: shipping.ticket_image ? String(shipping.ticket_image) : null,
+            problem: shipping.problem
+                ? {
+                    problem_id: Number(shipping.problem.id) || 0,
+                    problem_name: String(shipping.problem.problem_name || ""),
+                }
+                : null,
+            ticket: {
+                ticket_number: shipping.ticket_number ? String(shipping.ticket_number) : null,
+                ticket_image: shipping.ticket_image ? String(shipping.ticket_image) : null,
+            },
+            resi: {
+                resi_number: shipping.resi_number ? String(shipping.resi_number) : null,
+                resi_image: shipping.resi_image ? String(shipping.resi_image) : null,
+            },
             status: shipping.status ? String(shipping.status) : null,
-            resi_number: shipping.resi_number ? String(shipping.resi_number) : null,
-            resi_image: shipping.resi_image ? String(shipping.resi_image) : null,
             created_at: shipping.created_at ? new Date(shipping.created_at).toISOString() : null,
             updated_at: shipping.updated_at ? new Date(shipping.updated_at).toISOString() : null,
         };
-
-        // Handle address relation
-        if (shipping.address) {
-            result.address = {
-                id: Number(shipping.address.id) || 0,
-                province: String(shipping.address.province || ""),
-                cluster: shipping.address.cluster ? String(shipping.address.cluster) : null,
-                address_shipping: String(shipping.address.address_shipping || ""),
-            };
-        } else {
-            result.address = null;
-        }
-
-        // Handle problem relation
-        if (shipping.problem) {
-            result.problem = {
-                id: Number(shipping.problem.id) || 0,
-                problem_name: String(shipping.problem.problem_name || ""),
-            };
-        } else {
-            result.problem = null;
-        }
 
         return result;
     }

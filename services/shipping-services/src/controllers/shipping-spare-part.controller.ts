@@ -228,6 +228,22 @@ export class ShippingSparePartController {
             });
         }
     }
+
+    async exportToPDF(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const query = ShippingExportQuerySchema.parse(request.query);
+            const { buffer, filename } = await shippingSparePartService.exportToPDF(query);
+
+            reply.header("Content-Type", "application/pdf");
+            reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+            return reply.send(buffer);
+        } catch (error) {
+            return ResponseHelper.handleError(reply, error, "Failed to export to PDF", {
+                logger: shippingLogger,
+                context: "Error exporting shipping spare parts to PDF",
+            });
+        }
+    }
 }
 
 export const shippingSparePartController = new ShippingSparePartController();
