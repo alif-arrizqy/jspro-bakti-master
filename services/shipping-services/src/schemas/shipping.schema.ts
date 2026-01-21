@@ -42,6 +42,8 @@ export const ShippingSparePartQuerySchema = z.object({
     site_id: z.string().optional(),
     address_id: z.coerce.number().int().positive().optional(),
     problem_id: z.coerce.number().int().positive().optional(),
+    province: ProvinceEnum.optional(),
+    cluster: z.string().optional(),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     search: z.string().optional(),
