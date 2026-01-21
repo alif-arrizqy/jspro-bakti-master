@@ -112,22 +112,50 @@ export async function saveImageFile(
  */
 export async function deleteImageFile(filePath: string): Promise<void> {
     try {
-        // If filePath is a URL, extract the path
-        let actualPath = filePath;
-        if (filePath.startsWith("/")) {
-            actualPath = filePath.slice(1);
-        }
-        if (filePath.startsWith("uploads/")) {
-            actualPath = path.join(process.cwd(), actualPath);
-        } else if (!path.isAbsolute(actualPath)) {
-            actualPath = path.join(process.cwd(), "uploads", actualPath);
+        if (!filePath || filePath.trim() === "") {
+            shippingLogger.warn({ filePath }, "Empty file path provided, skipping delete");
+            return;
         }
 
+        // Normalize path: remove leading slash if exists
+        let normalizedPath = filePath.startsWith("/") ? filePath.slice(1) : filePath;
+
+        // Build absolute path
+        let actualPath: string;
+        
+        // If path already starts with "uploads/", use it directly
+        if (normalizedPath.startsWith("uploads/")) {
+            actualPath = path.join(process.cwd(), normalizedPath);
+        } 
+        // If path is absolute, use it as is
+        else if (path.isAbsolute(normalizedPath)) {
+            actualPath = normalizedPath;
+        }
+        // Otherwise, assume it's relative to uploads folder
+        else {
+            actualPath = path.join(process.cwd(), "uploads", normalizedPath);
+        }
+
+        // Check if file exists before attempting to delete
+        try {
+            await fs.access(actualPath);
+        } catch (accessError) {
+            shippingLogger.warn({ filePath, actualPath }, "Image file does not exist, skipping delete");
+            return;
+        }
+
+        // Delete the file
         await fs.unlink(actualPath);
-        shippingLogger.info({ filePath: actualPath }, "Image file deleted");
+        shippingLogger.info({ filePath, actualPath }, "Image file deleted successfully");
     } catch (error) {
-        // File might not exist, log but don't throw
-        shippingLogger.warn({ error, filePath }, "Failed to delete image file (might not exist)");
+        // Log error but don't throw - we don't want delete operation to fail the entire request
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        shippingLogger.error({ error: errorMessage, filePath }, "Failed to delete image file");
+        // Re-throw only for unexpected errors that we should know about
+        // For ENOENT (file not found), we already handled it above
+        if (error instanceof Error && (error as any).code !== "ENOENT") {
+            shippingLogger.error({ error: errorMessage, filePath }, "Unexpected error deleting image file");
+        }
     }
 }
 
