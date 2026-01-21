@@ -75,7 +75,7 @@ async function getImageBuffer(imagePath: string | null | undefined): Promise<Buf
 function addImageToWorksheet(
     workbook: ExcelJS.Workbook,
     worksheet: ExcelJS.Worksheet,
-    imageBuffer: Buffer,
+    imageBuffer: Buffer | Uint8Array,
     rowNumber: number,
     columnNumber: number,
     maxWidth: number = 150,
@@ -93,9 +93,9 @@ function addImageToWorksheet(
         }
 
         const imageId = workbook.addImage({
-            buffer: imageBuffer,
+            buffer: (Buffer.isBuffer(imageBuffer) ? imageBuffer : Buffer.from(imageBuffer)) as any,
             extension: imageType,
-        });
+        } as any);
 
         // Get column width (in Excel units: 1 unit ≈ 7 pixels for default font)
         const column = worksheet.getColumn(columnNumber);

@@ -93,8 +93,8 @@ export class ReturSparePartService {
                 date: new Date(data.date),
                 shipper: String(data.shipper),
                 source_spare_part: String(data.source_spare_part),
-                list_spare_part: data.list_spare_part ? String(data.list_spare_part) : null, // Now string, not JSON
-                image: data.image ? String(data.image) : null, // Image is now single URL string
+                list_spare_part: data.list_spare_part ? String(data.list_spare_part) : Prisma.JsonNull,
+                image: data.image ? String(data.image) : Prisma.JsonNull,
                 notes: data.notes ? String(data.notes) : null,
             },
         });
@@ -134,10 +134,10 @@ export class ReturSparePartService {
                 ...(data.shipper && { shipper: String(data.shipper) }),
                 ...(data.source_spare_part && { source_spare_part: String(data.source_spare_part) }),
                 ...(data.list_spare_part !== undefined && {
-                    list_spare_part: data.list_spare_part ? String(data.list_spare_part) : null, // Now string, not JSON
+                    list_spare_part: data.list_spare_part ? String(data.list_spare_part) : Prisma.JsonNull,
                 }),
                 ...(data.image !== undefined && {
-                    image: data.image ? String(data.image) : null, // Image is now single URL string
+                    image: data.image ? String(data.image) : Prisma.JsonNull,
                 }),
                 ...(data.notes !== undefined && { notes: data.notes ? String(data.notes) : null }),
             },
