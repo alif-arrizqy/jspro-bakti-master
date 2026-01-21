@@ -94,7 +94,6 @@ export const ContactPersonSchema = z.object({
 export const SiteInfoReadSchema = z.object({
   prCode: z.string().max(50).optional().nullable(),
   siteId: z.string().max(50),
-  clusterId: z.string().max(50).optional().nullable(),
   terminalId: z.string().max(50).optional().nullable(),
   siteName: z.string().max(100),
   ipSnmp: z.string().max(50).optional().nullable(),
@@ -112,7 +111,6 @@ export const SiteInfoReadSchema = z.object({
 export const SiteInfoCreateSchema = z.object({
   prCode: z.string().max(50).optional().nullable(),
   siteId: z.string().max(50),
-  clusterId: z.string().max(50).optional().nullable(),
   terminalId: z.string().max(50).optional().nullable(),
   siteName: z.string().max(100),
   ipSnmp: z.string().max(50).optional().nullable(),

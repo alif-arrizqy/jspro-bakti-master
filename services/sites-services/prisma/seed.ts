@@ -105,6 +105,7 @@ const parseDate = (dateStr: string | null | undefined): Date | null => {
 
 // Type for JSON data
 interface SiteJsonData {
+  pr_code?: string;
   site_id: string;
   site_name: string;
   onair_date?: string;
@@ -123,6 +124,7 @@ interface SiteJsonData {
   project_phase?: string;
   build_year?: string;
   webapp_url?: string;
+  ip_mini_pc?: string | null;
   mini_pc?: string | null;
   terminal_id?: string;
   scc?: string;
@@ -135,6 +137,8 @@ interface SiteJsonData {
   ehub_version?: string;
   battery_version?: string;
   status_sites?: string;
+  migration_status?: string;
+  total_battery?: number;
   tvd_site?: boolean;
   contact_person?: Array<{ name: string; phone: string | null }>;
 }
@@ -190,16 +194,18 @@ async function main() {
 
       await prisma.siteInfo.create({
         data: {
+          prCode: site.pr_code || null,
           siteId: site.site_id,
           siteName: site.site_name,
           terminalId: site.terminal_id || null,
           ipSnmp: site.ip_snmp || null,
-          ipMiniPc: site.mini_pc || null,
+          ipMiniPc: site.ip_mini_pc || site.mini_pc || null,
           webappUrl: site.webapp_url || null,
           panel2Type: panel2Type,
           ehubVersion: ehubVersion,
           sccType: sccType,
           batteryVersion: batteryVersion,
+          totalBattery: site.total_battery ?? 0,
           statusSites: statusSites,
           isActive: true,
           detail: {

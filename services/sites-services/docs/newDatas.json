@@ -1,7 +1,6 @@
 [
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#132",
     "site_id": "UYP199",
     "site_name": "aisa",
     "onair_date": "2020-01-09",
@@ -27,6 +26,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -42,8 +42,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#98",
     "site_id": "PAP0015",
     "site_name": "aisandami",
     "onair_date": "2020-01-06",
@@ -69,6 +68,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -84,8 +84,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#141",
     "site_id": "UYP245",
     "site_name": "athabu",
     "onair_date": "2019-12-27",
@@ -111,6 +110,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -126,8 +126,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#147",
     "site_id": "UYP177",
     "site_name": "bedare",
     "onair_date": "2020-01-18",
@@ -153,6 +152,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-16",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -168,8 +168,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#178",
     "site_id": "UYO218",
     "site_name": "boha",
     "onair_date": "2020-11-03",
@@ -195,6 +194,7 @@
     "total_battery": 0,
     "talis_installed": "2025-11-13",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -210,8 +210,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#153",
     "site_id": "UYP195",
     "site_name": "boldon",
     "onair_date": "2020-01-06",
@@ -237,6 +236,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -252,8 +252,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#135",
     "site_id": "UYP234",
     "site_name": "bori",
     "onair_date": "2020-01-02",
@@ -279,6 +278,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -294,8 +294,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#186",
     "site_id": "UXW008",
     "site_name": "bumi_rahmat",
     "onair_date": "2020-12-18",
@@ -321,6 +320,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -336,8 +336,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#192",
     "site_id": "UXW005",
     "site_name": "dorolamo_1",
     "onair_date": "2020-12-12",
@@ -363,6 +362,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -378,8 +378,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#110",
     "site_id": "MAL0023",
     "site_name": "eliasa",
     "onair_date": "2020-02-01",
@@ -405,6 +404,7 @@
     "total_battery": 0,
     "talis_installed": "2025-03-04",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -420,8 +420,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#117",
     "site_id": "MAL0033",
     "site_name": "honitetu",
     "onair_date": "2020-01-25",
@@ -447,6 +446,7 @@
     "total_battery": 0,
     "talis_installed": "2025-10-30",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -462,8 +462,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#121",
     "site_id": "UXY053",
     "site_name": "huhua",
     "onair_date": "2020-01-28",
@@ -489,6 +488,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -504,8 +504,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#118",
     "site_id": "UXY050",
     "site_name": "hukukecil",
     "onair_date": "2020-02-04",
@@ -531,6 +530,7 @@
     "total_battery": 0,
     "talis_installed": "2025-11-07",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -546,8 +546,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#161",
     "site_id": "UXY046",
     "site_name": "ilili",
     "onair_date": "2020-01-30",
@@ -573,6 +572,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-14",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -588,8 +588,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#197",
     "site_id": "MAL0120",
     "site_name": "imbu_imbu",
     "onair_date": "2020-12-10",
@@ -615,6 +614,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -630,8 +630,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#91",
     "site_id": "UYP236",
     "site_name": "inyora",
     "onair_date": "2020-01-11",
@@ -657,6 +656,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -672,8 +672,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#93",
     "site_id": "UYP233",
     "site_name": "isenebuai",
     "onair_date": "2020-01-19",
@@ -699,6 +698,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-30",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -714,8 +714,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#173",
     "site_id": "MAL0022",
     "site_name": "kainara",
     "onair_date": "2020-01-29",
@@ -741,6 +740,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-13",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -756,8 +756,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#109",
     "site_id": "MAL01121",
     "site_name": "kaireu",
     "onair_date": "2020-12-13",
@@ -783,6 +782,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -798,8 +798,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#198",
     "site_id": "UXY068",
     "site_name": "kamar",
     "onair_date": "2020-01-16",
@@ -825,6 +824,7 @@
     "total_battery": 0,
     "talis_installed": "2025-04-29",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -840,8 +840,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#144",
     "site_id": "MAL0097",
     "site_name": "kampung_baru_1",
     "onair_date": "2020-01-22",
@@ -867,6 +866,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -882,8 +882,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#99",
     "site_id": "UYP257",
     "site_name": "karuan",
     "onair_date": "2020-02-14",
@@ -909,6 +908,7 @@
     "total_battery": 0,
     "talis_installed": "2025-09-06",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -924,8 +924,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#195",
     "site_id": "MAL0118",
     "site_name": "kelo",
     "onair_date": "2020-12-23",
@@ -951,6 +950,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -966,8 +966,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#182",
     "site_id": "UYP271",
     "site_name": "klayili",
     "onair_date": "2016-08-19",
@@ -993,6 +992,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-21",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1008,8 +1008,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#106",
     "site_id": "UXY062",
     "site_name": "kobror",
     "onair_date": "2020-01-27",
@@ -1035,6 +1034,7 @@
     "total_battery": 0,
     "talis_installed": "2025-10-06",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1050,8 +1050,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#149",
     "site_id": "UYP201",
     "site_name": "korewatara",
     "onair_date": "2020-01-16",
@@ -1077,6 +1076,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1092,8 +1092,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#188",
     "site_id": "UXW003",
     "site_name": "lili",
     "onair_date": "2020-12-17",
@@ -1119,6 +1118,7 @@
     "total_battery": 0,
     "talis_installed": "2025-07-31",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1134,8 +1134,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#130",
     "site_id": "UYP182",
     "site_name": "maan",
     "onair_date": "2020-01-03",
@@ -1161,6 +1160,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1176,8 +1176,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#104",
     "site_id": "MAL0016",
     "site_name": "maikor",
     "onair_date": "2020-01-26",
@@ -1203,6 +1202,7 @@
     "total_battery": 0,
     "talis_installed": "2025-05-14",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1218,8 +1218,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#156",
     "site_id": "UYP259",
     "site_name": "makaroro",
     "onair_date": "2020-01-21",
@@ -1245,6 +1244,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-15",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1260,8 +1260,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#113",
     "site_id": "UXY070",
     "site_name": "marantutul",
     "onair_date": "2020-01-12",
@@ -1287,6 +1286,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1302,8 +1302,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#107",
     "site_id": "UXY069",
     "site_name": "marfenfen",
     "onair_date": "2020-02-18",
@@ -1329,6 +1328,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.49",
@@ -1344,8 +1344,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#125",
     "site_id": "UYP227",
     "site_name": "mawe",
     "onair_date": "2019-11-28",
@@ -1371,6 +1370,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1386,8 +1386,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#92",
     "site_id": "UYP226",
     "site_name": "menarbu",
     "onair_date": "2020-01-18",
@@ -1413,6 +1412,7 @@
     "total_battery": 0,
     "talis_installed": "2025-10-08",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1428,8 +1428,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#145",
     "site_id": "UYP266",
     "site_name": "mirafan",
     "onair_date": "2019-12-28",
@@ -1455,6 +1454,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1470,8 +1470,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#114",
     "site_id": "UXY072",
     "site_name": "mitak_kolam",
     "onair_date": "2020-01-22",
@@ -1497,6 +1496,7 @@
     "total_battery": 0,
     "talis_installed": "2025-09-17",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.57",
@@ -1512,8 +1512,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#126",
     "site_id": "PAP0012",
     "site_name": "muwinbow",
     "onair_date": "2019-12-14",
@@ -1539,6 +1538,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1554,8 +1554,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#100",
     "site_id": "UYP260",
     "site_name": "nanimori",
     "onair_date": "2020-02-01",
@@ -1581,6 +1580,7 @@
     "total_battery": 0,
     "talis_installed": "2025-08-10",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1596,8 +1596,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#94",
     "site_id": "UYP225",
     "site_name": "niap",
     "onair_date": "2020-01-18",
@@ -1623,6 +1622,7 @@
     "total_battery": 0,
     "talis_installed": "2025-08-04",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1638,8 +1638,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#124",
     "site_id": "PAP0008",
     "site_name": "nij",
     "onair_date": "2019-12-14",
@@ -1665,6 +1664,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1680,8 +1680,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#80",
     "site_id": "MAL0050",
     "site_name": "nondang",
     "onair_date": "2020-01-14",
@@ -1707,6 +1706,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-28",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.11.25",
@@ -1722,8 +1722,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#199",
     "site_id": "MAL01122",
     "site_name": "ocimaloleo",
     "onair_date": "2020-12-24",
@@ -1749,6 +1748,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1764,8 +1764,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#191",
     "site_id": "UXW011",
     "site_name": "oha",
     "onair_date": "2020-12-15",
@@ -1791,6 +1790,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1806,8 +1806,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#151",
     "site_id": "UYP231",
     "site_name": "puragi",
     "onair_date": "2020-01-18",
@@ -1833,6 +1832,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1848,8 +1848,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#129",
     "site_id": "UYP180",
     "site_name": "renis",
     "onair_date": "2020-01-06",
@@ -1875,6 +1874,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1890,8 +1890,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#168",
     "site_id": "UXY055",
     "site_name": "rumoy",
     "onair_date": "2020-02-01",
@@ -1917,6 +1916,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-12",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.09",
@@ -1932,8 +1932,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#196",
     "site_id": "MAL0119",
     "site_name": "saketa",
     "onair_date": "2020-12-07",
@@ -1959,6 +1958,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1974,8 +1974,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#88",
     "site_id": "UYP191",
     "site_name": "sandei",
     "onair_date": "2020-01-24",
@@ -2001,6 +2000,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-19",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2016,8 +2016,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#97",
     "site_id": "UYP247",
     "site_name": "sariai",
     "onair_date": "2020-01-14",
@@ -2043,6 +2042,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-29",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2058,8 +2058,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#102",
     "site_id": "PAP0022",
     "site_name": "sayori_sikama",
     "onair_date": "2020-01-11",
@@ -2085,6 +2084,7 @@
     "total_battery": 0,
     "talis_installed": "2025-08-06",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2100,8 +2100,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#190",
     "site_id": "UXW010",
     "site_name": "sekely",
     "onair_date": "2020-12-20",
@@ -2127,6 +2126,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2142,8 +2142,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#174",
     "site_id": "UXY075",
     "site_name": "sera",
     "onair_date": "2020-02-04",
@@ -2169,6 +2168,7 @@
     "total_battery": 0,
     "talis_installed": "2024-11-20",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.73",
@@ -2184,8 +2184,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#83",
     "site_id": "MAL0092",
     "site_name": "silang",
     "onair_date": "2020-01-18",
@@ -2211,6 +2210,7 @@
     "total_battery": 0,
     "talis_installed": "2025-01-16",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2226,8 +2226,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#155",
     "site_id": "UYP258",
     "site_name": "siri_siri",
     "onair_date": "2020-01-12",
@@ -2253,6 +2252,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2268,8 +2268,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#89",
     "site_id": "UYP197",
     "site_name": "sobiar",
     "onair_date": "2020-02-09",
@@ -2295,6 +2294,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2310,8 +2310,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#112",
     "site_id": "UXY054",
     "site_name": "sofyanin",
     "onair_date": "2020-01-29",
@@ -2337,6 +2336,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-05",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2352,8 +2352,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#131",
     "site_id": "UYP198",
     "site_name": "sorowan",
     "onair_date": "2019-12-23",
@@ -2379,6 +2378,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-14",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2395,8 +2395,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#138",
     "site_id": "UYP239",
     "site_name": "sorry",
     "onair_date": "2019-12-31",
@@ -2422,6 +2421,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2437,8 +2437,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#194",
     "site_id": "MAL0117",
     "site_name": "sosepe",
     "onair_date": "2020-12-14",
@@ -2464,6 +2463,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2479,8 +2479,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#119",
     "site_id": "UXY051",
     "site_name": "sukowati",
     "onair_date": "2020-02-01",
@@ -2506,6 +2505,7 @@
     "total_battery": 0,
     "talis_installed": "2024-08-13",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2522,8 +2522,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#85",
     "site_id": "MAL0106",
     "site_name": "suma_tinggi",
     "onair_date": "2020-01-13",
@@ -2549,6 +2548,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-29",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.12.217",
@@ -2564,8 +2564,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#148",
     "site_id": "MAL0105",
     "site_name": "sumae",
     "onair_date": "2020-01-11",
@@ -2591,6 +2590,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2606,8 +2606,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#86",
     "site_id": "UYP242",
     "site_name": "sumano",
     "onair_date": "2020-01-21",
@@ -2633,6 +2632,7 @@
     "total_battery": 0,
     "talis_installed": "2025-06-17",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2648,8 +2648,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#171",
     "site_id": "UXY067",
     "site_name": "sumber_agung",
     "onair_date": "2020-01-02",
@@ -2675,6 +2674,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.33",
@@ -2690,8 +2690,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#137",
     "site_id": "UYP237",
     "site_name": "sunei",
     "onair_date": "2019-12-30",
@@ -2717,6 +2716,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2732,8 +2732,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#87",
     "site_id": "MAL0107",
     "site_name": "tabajaya",
     "onair_date": "2020-01-15",
@@ -2759,6 +2758,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.12.225",
@@ -2774,8 +2774,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#78",
     "site_id": "MAL0040",
     "site_name": "tabangame",
     "onair_date": "2020-01-16",
@@ -2801,6 +2800,7 @@
     "total_battery": 0,
     "talis_installed": "2025-11-12",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.11.1",
@@ -2816,8 +2816,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#189",
     "site_id": "UXW004",
     "site_name": "tatangapu",
     "onair_date": "2020-12-15",
@@ -2843,6 +2842,7 @@
     "total_battery": 0,
     "talis_installed": "2025-11-08",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2858,8 +2858,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#111",
     "site_id": "MAL0024",
     "site_name": "teineman",
     "onair_date": "2020-01-30",
@@ -2885,6 +2884,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2900,8 +2900,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#79",
     "site_id": "MAL0077",
     "site_name": "tomara",
     "onair_date": "2020-01-18",
@@ -2927,6 +2926,7 @@
     "total_battery": 0,
     "talis_installed": "2024-12-24",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.113",
@@ -2942,8 +2942,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#187",
     "site_id": "UXW009",
     "site_name": "tosoa",
     "onair_date": "2020-12-12",
@@ -2969,6 +2968,7 @@
     "total_battery": 0,
     "talis_installed": "2024-10-19",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2984,8 +2984,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#81",
     "site_id": "MAL0078",
     "site_name": "tutupa",
     "onair_date": "2020-01-18",
@@ -3011,6 +3010,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.11.249",
@@ -3026,8 +3026,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#193",
     "site_id": "UXW006",
     "site_name": "upt_sp2_patlean",
     "onair_date": "2020-12-17",
@@ -3053,6 +3052,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3068,8 +3068,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#179",
     "site_id": "UYO217",
     "site_name": "waan",
     "onair_date": "2018-12-11",
@@ -3095,6 +3094,7 @@
     "total_battery": 0,
     "talis_installed": "2025-11-14",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.50.11",
@@ -3110,8 +3110,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#105",
     "site_id": "UXY061",
     "site_name": "warloi",
     "onair_date": "2020-01-26",
@@ -3137,6 +3136,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.25",
@@ -3152,8 +3152,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#185",
     "site_id": "UXW002",
     "site_name": "wasileo",
     "onair_date": "2020-12-17",
@@ -3179,6 +3178,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3194,8 +3194,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#82",
     "site_id": "MAL0091",
     "site_name": "wayatim",
     "onair_date": "2020-01-19",
@@ -3221,6 +3220,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3236,8 +3236,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#115",
     "site_id": "UXY073",
     "site_name": "werlumdity",
     "onair_date": "2020-03-02",
@@ -3263,6 +3262,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3278,8 +3278,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#101",
     "site_id": "PAP0021",
     "site_name": "wombu",
     "onair_date": "2020-01-10",
@@ -3305,6 +3304,7 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3320,8 +3320,7 @@
     ]
   },
   {
-    "pr_code": null,
-    "cluster_id": null,
+    "pr_code": "PR#90",
     "site_id": "UYP221",
     "site_name": "yabore",
     "onair_date": "2020-01-08",
@@ -3347,6 +3346,7 @@
     "total_battery": 0,
     "talis_installed": "2025-10-06",
     "status_sites": "non-terestrial",
+    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,

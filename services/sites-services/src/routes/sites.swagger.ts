@@ -107,7 +107,6 @@ export const siteBodySchema = {
   properties: {
     prCode: { type: "string", nullable: true },
     siteId: { type: "string" },
-    clusterId: { type: "string", nullable: true },
     terminalId: { type: "string", nullable: true },
     siteName: { type: "string" },
     ipSnmp: { type: "string", nullable: true },

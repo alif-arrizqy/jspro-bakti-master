@@ -195,7 +195,6 @@ export class SitesService {
     const siteInfoData: Prisma.SiteInfoCreateInput = {
       prCode: siteData.prCode ? emptyStringToNull(siteData.prCode) : null,
       siteId: siteData.siteId,
-      clusterId: siteData.clusterId ? emptyStringToNull(siteData.clusterId) : null,
       terminalId: siteData.terminalId ? emptyStringToNull(siteData.terminalId) : null,
       siteName: siteData.siteName,
       ipSnmp: siteData.ipSnmp ? emptyStringToNull(siteData.ipSnmp) : null,
@@ -288,7 +287,6 @@ export class SitesService {
 
     if (cleanedSiteData.prCode !== undefined) updateData.prCode = emptyStringToNull(cleanedSiteData.prCode ?? null);
     if (cleanedSiteData.siteId !== undefined) updateData.siteId = cleanedSiteData.siteId;
-    if (cleanedSiteData.clusterId !== undefined) updateData.clusterId = emptyStringToNull(cleanedSiteData.clusterId ?? null);
     if (cleanedSiteData.terminalId !== undefined) updateData.terminalId = emptyStringToNull(cleanedSiteData.terminalId ?? null);
     if (cleanedSiteData.siteName !== undefined) updateData.siteName = cleanedSiteData.siteName;
     if (cleanedSiteData.ipSnmp !== undefined) updateData.ipSnmp = emptyStringToNull(cleanedSiteData.ipSnmp ?? null);
