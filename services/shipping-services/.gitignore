@@ -27,7 +27,12 @@ temp/
 *.tmp
 
 # Upload files
-uploads/*
+uploads/retur/*
+!uploads/retur/.gitkeep
+uploads/shipping/resi/*
+!uploads/shipping/resi/.gitkeep
+uploads/shipping/ticket/*
+!uploads/shipping/ticket/.gitkeep
 
 package-lock.json
 
