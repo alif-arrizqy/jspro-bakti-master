@@ -18,6 +18,7 @@ export async function registerRoutes(fastify: FastifyInstance, prefix: string) {
                     properties: {
                         status: { type: "string" },
                         timestamp: { type: "string" },
+                        uptime: { type: "number" },
                     },
                 },
             },
@@ -26,6 +27,7 @@ export async function registerRoutes(fastify: FastifyInstance, prefix: string) {
             return reply.send({
                 status: "ok",
                 timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
             });
         },
     });
