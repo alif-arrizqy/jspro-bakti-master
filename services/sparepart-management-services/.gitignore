@@ -1,0 +1,48 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+sparepart-management-services
+sparepart-management-services.exe
+
+# Test binary
+*.test
+
+# Output
+*.out
+dist/
+build/
+
+# Go workspace file
+go.work
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Uploads
+uploads/
+!uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Swagger generated
+docs/
+
+# Generated sqlc code
+internal/database/sqlc/
