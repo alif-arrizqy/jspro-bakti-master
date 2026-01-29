@@ -29,9 +29,10 @@ go.work
 *.swo
 *~
 
-# Uploads
-uploads/
-!uploads/.gitkeep
+# Upload files
+*.jpg
+*.png
+*.jpeg
 
 # Logs
 *.log
