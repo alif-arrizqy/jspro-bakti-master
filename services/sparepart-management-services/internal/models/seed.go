@@ -168,12 +168,13 @@ func Seed(ctx context.Context) error {
 		{"EHUB", sqlcdb.ItemTypeSPAREPART},
 		{"SCC SRNE", sqlcdb.ItemTypeSPAREPART},
 		{"SCC EPEVER", sqlcdb.ItemTypeSPAREPART},
-		{"KONTROL PANEL + SCC", sqlcdb.ItemTypeSPAREPART},
-		{"KONTROL PANEL Tanpa SCC", sqlcdb.ItemTypeSPAREPART},
+		{"Kontrol Panel + SCC", sqlcdb.ItemTypeSPAREPART},
+		{"Kontrol Panel Tanpa SCC", sqlcdb.ItemTypeSPAREPART},
 		{"BUSBAR 12", sqlcdb.ItemTypeSPAREPART},
 		{"BUSBAR 4", sqlcdb.ItemTypeSPAREPART},
-		{"PANEL 2", sqlcdb.ItemTypeSPAREPART},
+		{"Panel 2", sqlcdb.ItemTypeSPAREPART},
 		{"BMS", sqlcdb.ItemTypeSPAREPART},
+		{"Baterai JSPro", sqlcdb.ItemTypeSPAREPART},
 	}
 
 	// Get all existing spareparts
@@ -211,9 +212,9 @@ func Seed(ctx context.Context) error {
 		Name     string
 		ItemType sqlcdb.ItemType
 	}{
-		{"ALAT WAKEUP", sqlcdb.ItemTypeTOOLSALKER},
-		{"KABEL CHARGING EXTERNAL", sqlcdb.ItemTypeTOOLSALKER},
-		{"CAN BOX BATTERY", sqlcdb.ItemTypeTOOLSALKER},
+		{"Alat Wakeup", sqlcdb.ItemTypeTOOLSALKER},
+		{"Kabel Charging External", sqlcdb.ItemTypeTOOLSALKER},
+		{"Can Box Battery", sqlcdb.ItemTypeTOOLSALKER},
 	}
 
 	for _, tool := range toolsAlker {
