@@ -997,25 +997,13 @@ export class SlaBaktiService {
      */
     /**
      * Get date range for problem data
-     * Rules:
-     * - Normal (tanggal 2+): startDate = tanggal 1 bulan sekarang, endDate = akhir bulan sekarang
-     * - Edge case (tanggal 1): startDate = tanggal 1 bulan sebelumnya, endDate = akhir bulan sebelumnya
+     * Always use the month of endDate: startDate = tanggal 1 bulan endDate, endDate = akhir bulan endDate
+     * This ensures Daily Report with endDate 1 Feb shows February report data, not January
      */
     private getProblemDateRange(endDate: Date): { startDate: Date; endDate: Date } {
         const end = dayjs(endDate);
-        const today = dayjs();
-        
-        // Determine target month
-        let targetMonth = end;
-        
-        // If endDate is the 1st of current month, use previous month
-        if (end.date() === 1 && today.isSame(end, 'month')) {
-            targetMonth = end.subtract(1, 'month');
-        }
-        
-        const startDate = targetMonth.startOf('month').toDate();
-        const problemEndDate = targetMonth.endOf('month').toDate();
-        
+        const startDate = end.startOf('month').toDate();
+        const problemEndDate = end.endOf('month').toDate();
         return { startDate, endDate: problemEndDate };
     }
 
