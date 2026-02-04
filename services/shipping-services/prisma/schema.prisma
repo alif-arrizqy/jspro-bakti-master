@@ -70,7 +70,7 @@ model ShippingSparePart {
   address Address       @relation(fields: [address_id], references: [id])
   problem ProblemMaster @relation(fields: [problem_id], references: [id])
 
-  @@unique([site_id, date], name: "idx_sla_bakti_site_date")
+  @@index([site_id, date], name: "idx_sla_bakti_site_date")
   @@index([date], name: "idx_sla_bakti_date")
   @@index([site_id], name: "idx_sla_bakti_site_id")
   @@index([problem_id], name: "idx_sla_bakti_problem_id")
