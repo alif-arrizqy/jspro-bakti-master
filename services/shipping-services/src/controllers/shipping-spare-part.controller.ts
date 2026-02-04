@@ -116,8 +116,11 @@ export class ShippingSparePartController {
             if (dataToValidate.address_id) {
                 dataToValidate.address_id = Number(dataToValidate.address_id);
             }
-            if (dataToValidate.problem_id) {
-                dataToValidate.problem_id = Number(dataToValidate.problem_id);
+            const rawProblemId = dataToValidate.problem_id;
+            if (rawProblemId != null && rawProblemId !== "" && !Number.isNaN(Number(rawProblemId)) && Number(rawProblemId) > 0) {
+                dataToValidate.problem_id = Number(rawProblemId);
+            } else if (dataToValidate.problem_name != null && dataToValidate.problem_name !== "") {
+                dataToValidate.problem_id = undefined;
             }
 
             let data;
@@ -148,6 +151,7 @@ export class ShippingSparePartController {
             const parts = request.parts();
             const fields: Record<string, any> = {};
             let resiImageUrl: string | null = null;
+            let ticketImageUrl: string | null = null;
 
             for await (const part of parts) {
                 try {
@@ -157,6 +161,13 @@ export class ShippingSparePartController {
                                 resiImageUrl = await processImageUpload(part, "resi");
                             } catch (uploadError: any) {
                                 shippingLogger.error({ error: uploadError.message }, "Error processing resi image upload");
+                                return ResponseHelper.error(reply, `Error processing image: ${uploadError.message}`, 400);
+                            }
+                        } else if (part.fieldname === "ticket_image") {
+                            try {
+                                ticketImageUrl = await processImageUpload(part, "ticket");
+                            } catch (uploadError: any) {
+                                shippingLogger.error({ error: uploadError.message }, "Error processing ticket image upload");
                                 return ResponseHelper.error(reply, `Error processing image: ${uploadError.message}`, 400);
                             }
                         } else {
@@ -172,10 +183,23 @@ export class ShippingSparePartController {
                 }
             }
 
-            const data = ShippingSparePartUpdateSchema.parse({
+            const updatePayload: Record<string, unknown> = {
                 ...fields,
                 resi_image: resiImageUrl !== null ? resiImageUrl : fields.resi_image,
-            });
+                ticket_image: ticketImageUrl !== null ? ticketImageUrl : fields.ticket_image,
+            };
+            if (fields.address_id != null && fields.address_id !== "") {
+                const aid = Number(fields.address_id);
+                if (!Number.isNaN(aid) && aid > 0) updatePayload.address_id = aid;
+            }
+            const rawProblemId = fields.problem_id;
+            if (rawProblemId != null && rawProblemId !== "" && !Number.isNaN(Number(rawProblemId)) && Number(rawProblemId) > 0) {
+                updatePayload.problem_id = Number(rawProblemId);
+            } else if (fields.problem_name != null && fields.problem_name !== "") {
+                updatePayload.problem_id = undefined;
+            }
+
+            const data = ShippingSparePartUpdateSchema.parse(updatePayload);
 
             const shipping = await shippingSparePartService.update(params.id, data);
             return ResponseHelper.success(reply, "Shipping spare part updated successfully", shipping);

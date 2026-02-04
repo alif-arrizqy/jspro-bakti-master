@@ -10,6 +10,7 @@ import { deleteImageFile } from "../utils/file-upload.util";
 import { generateShippingSparePartExcel } from "../utils/excel.util";
 import { generateShippingSparePartPDF } from "../utils/pdf.util";
 import { sitesService } from "./sites.service";
+import { problemMasterService } from "./problem-master.service";
 
 export class ShippingSparePartService {
     async getAll(query: ShippingSparePartQuery) {
@@ -208,8 +209,17 @@ export class ShippingSparePartService {
     }
 
     async create(data: ShippingSparePartCreate) {
+        let problemId = data.problem_id;
+        if (data.problem_name != null && data.problem_name.trim().length > 0 && (!problemId || problemId <= 0)) {
+            const created = await problemMasterService.create({ problem_name: data.problem_name.trim() });
+            problemId = created.id;
+        }
+        if (!problemId || problemId <= 0) {
+            throw new Error("Either problem_id (positive) or problem_name is required");
+        }
+
         // Validate foreign keys exist
-        await this.validateForeignKeys(data.address_id, data.problem_id);
+        await this.validateForeignKeys(data.address_id, problemId);
 
         if (data.site_id) {
             await sitesService.validateSiteId(data.site_id);
@@ -221,7 +231,7 @@ export class ShippingSparePartService {
                 site_id: data.site_id,
                 address_id: data.address_id,
                 sparepart_note: data.sparepart_note || null,
-                problem_id: data.problem_id,
+                problem_id: problemId,
                 ticket_number: data.ticket_number || null,
                 ticket_image: data.ticket_image || null,
                 status: data.status,
@@ -264,8 +274,8 @@ export class ShippingSparePartService {
             throw new Error("Shipping spare part not found");
         }
 
-        // Validate status transition
-        if (data.status) {
+        // Validate status transition only when status actually changes
+        if (data.status && data.status !== existing.status) {
             this.validateStatusTransition(existing.status, data.status);
         }
 
@@ -279,8 +289,27 @@ export class ShippingSparePartService {
             }
         }
 
+        // Resolve problem_id: create new problem if problem_name provided
+        let updateProblemId: number | undefined;
+        if (data.problem_name != null && data.problem_name.trim().length > 0 && (!data.problem_id || data.problem_id <= 0)) {
+            const created = await problemMasterService.create({ problem_name: data.problem_name.trim() });
+            updateProblemId = created.id;
+        } else if (data.problem_id != null && data.problem_id > 0) {
+            const problem = await prisma.problemMaster.findUnique({ where: { id: data.problem_id } });
+            if (!problem) {
+                throw new Error(`Problem with id ${data.problem_id} not found`);
+            }
+            updateProblemId = data.problem_id;
+        }
+
+        if (data.address_id != null && data.address_id > 0) {
+            const address = await prisma.address.findUnique({ where: { id: data.address_id } });
+            if (!address) {
+                throw new Error(`Address with id ${data.address_id} not found`);
+            }
+        }
+
         // Delete old resi_image if updating with new image
-        // Only delete if there's a new image and it's different from the existing one
         if (data.resi_image && existing.resi_image && data.resi_image !== existing.resi_image) {
             try {
                 await deleteImageFile(existing.resi_image);
@@ -290,12 +319,26 @@ export class ShippingSparePartService {
             }
         }
 
+        // Delete old ticket_image if updating with new image
+        if (data.ticket_image && existing.ticket_image && data.ticket_image !== existing.ticket_image) {
+            try {
+                await deleteImageFile(existing.ticket_image);
+                shippingLogger.info({ shippingId: id, oldImage: existing.ticket_image }, "Old ticket image deleted");
+            } catch (error) {
+                shippingLogger.warn({ error, shippingId: id, imagePath: existing.ticket_image }, "Failed to delete old ticket image, continuing with update");
+            }
+        }
+
         const shipping = await prisma.shippingSparePart.update({
             where: { id },
             data: {
+                ...(data.ticket_number !== undefined && { ticket_number: data.ticket_number ?? null }),
+                ...(data.ticket_image !== undefined && { ticket_image: data.ticket_image ?? null }),
                 ...(data.resi_number !== undefined && { resi_number: data.resi_number }),
                 ...(data.resi_image !== undefined && { resi_image: data.resi_image }),
                 ...(data.status && { status: data.status }),
+                ...(data.address_id != null && data.address_id > 0 && { address_id: data.address_id }),
+                ...(updateProblemId != null && { problem_id: updateProblemId }),
             },
             include: {
                 address: true,

@@ -18,23 +18,34 @@ export const ProvinceEnum = z.enum([
 // Shipping Spare Part Schemas
 // ============================================================
 
-export const ShippingSparePartCreateSchema = z.object({
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
-    site_id: z.string().max(20),
-    address_id: z.coerce.number().int().positive(),
-    sparepart_note: z.string().nullable().optional(),
-    problem_id: z.coerce.number().int().positive(),
-    ticket_number: z.string().max(50).nullable().optional(),
-    ticket_image: z.string().nullable().optional(), // Will be set from file upload
-    status: ShippingStatusEnum.default("REQUEST_GUDANG"),
-    resi_number: z.string().max(100).nullable().optional(),
-    resi_image: z.string().nullable().optional(),
-});
+export const ShippingSparePartCreateSchema = z
+    .object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+        site_id: z.string().max(20),
+        address_id: z.coerce.number().int().positive(),
+        sparepart_note: z.string().nullable().optional(),
+        problem_id: z.coerce.number().int().optional(),
+        problem_name: z.string().min(1).max(100).optional(),
+        ticket_number: z.string().max(50).nullable().optional(),
+        ticket_image: z.string().nullable().optional(), // Will be set from file upload
+        status: ShippingStatusEnum.default("REQUEST_GUDANG"),
+        resi_number: z.string().max(100).nullable().optional(),
+        resi_image: z.string().nullable().optional(),
+    })
+    .refine(
+        (data) => (data.problem_id != null && data.problem_id > 0) || (data.problem_name != null && data.problem_name.trim().length > 0),
+        { message: "Either problem_id (positive) or problem_name is required" }
+    );
 
 export const ShippingSparePartUpdateSchema = z.object({
+    ticket_number: z.string().max(50).nullable().optional(),
+    ticket_image: z.string().nullable().optional(),
     resi_number: z.string().max(100).optional(),
     resi_image: z.string().nullable().optional(),
     status: ShippingStatusEnum.optional(),
+    address_id: z.coerce.number().int().positive().optional(),
+    problem_id: z.coerce.number().int().positive().optional(),
+    problem_name: z.string().min(1).max(100).optional(),
 });
 
 export const ShippingSparePartQuerySchema = z.object({
