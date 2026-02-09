@@ -26,7 +26,7 @@ export const ShippingSparePartCreateSchema = z
         sparepart_note: z.string().nullable().optional(),
         problem_id: z.coerce.number().int().optional(),
         problem_name: z.string().min(1).max(100).optional(),
-        ticket_number: z.string().max(50).nullable().optional(),
+        ticket_number: z.string().max(100).nullable().optional(),
         ticket_image: z.string().nullable().optional(), // Will be set from file upload
         status: ShippingStatusEnum.default("REQUEST_GUDANG"),
         resi_number: z.string().max(100).nullable().optional(),
