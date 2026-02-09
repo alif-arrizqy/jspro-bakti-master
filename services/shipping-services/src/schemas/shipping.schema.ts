@@ -38,7 +38,7 @@ export const ShippingSparePartCreateSchema = z
     );
 
 export const ShippingSparePartUpdateSchema = z.object({
-    ticket_number: z.string().max(50).nullable().optional(),
+    ticket_number: z.string().max(100).nullable().optional(),
     ticket_image: z.string().nullable().optional(),
     resi_number: z.string().max(100).optional(),
     resi_image: z.string().nullable().optional(),
