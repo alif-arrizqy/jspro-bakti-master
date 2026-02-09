@@ -281,10 +281,14 @@ export class ShippingSparePartService {
 
         // If updating to PROSES_KIRIM, require resi_number and resi_image
         if (data.status === "PROSES_KIRIM") {
-            if (!data.resi_number) {
+            // Check if resi_number exists either in update data or existing record
+            const finalResiNumber = data.resi_number ?? existing.resi_number;
+            if (!finalResiNumber) {
                 throw new Error("resi_number is required when status is PROSES_KIRIM");
             }
-            if (!data.resi_image) {
+            // Check if resi_image exists either in update data or existing record
+            const finalResiImage = data.resi_image ?? existing.resi_image;
+            if (!finalResiImage) {
                 throw new Error("resi_image is required when status is PROSES_KIRIM");
             }
         }
