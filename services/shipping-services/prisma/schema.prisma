@@ -59,7 +59,7 @@ model ShippingSparePart {
   address_id      Int
   sparepart_note  String?         @db.Text
   problem_id      Int
-  ticket_number   String?         @db.VarChar(50)
+  ticket_number   String?         @db.VarChar(100)
   ticket_image    String?         @db.Text
   status          ShippingStatus
   resi_number     String?         @db.VarChar(100)
