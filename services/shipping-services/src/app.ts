@@ -66,7 +66,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     await fastify.register(multipart, {
         limits: {
             fileSize: 5 * 1024 * 1024, // 5MB max
-            files: 1, // Max 1 file per request
+            files: 10, // Max 10 files/fields per request to allow multiple form fields
+            fields: 20, // Max 20 non-file fields
         },
         attachFieldsToBody: false, // Don't auto-parse, we handle manually
     });
