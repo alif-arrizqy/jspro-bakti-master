@@ -26,7 +26,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -37,7 +36,7 @@
     "contact_person": [
       {
         "name": "Agustinus",
-        "phone": "0821-5229-4454"
+        "phone": "0813-4449-3681"
       }
     ]
   },
@@ -68,7 +67,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -79,7 +77,7 @@
     "contact_person": [
       {
         "name": "Nikolaus Kereway",
-        "phone": "0859-5163-3541"
+        "phone": "0853-4352-1781"
       }
     ]
   },
@@ -110,7 +108,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -152,7 +149,6 @@
     "total_battery": 0,
     "talis_installed": "2024-11-16",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -162,8 +158,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Ronlad",
-        "phone": "0823-9951-0559"
+        "name": "AlfARIS",
+        "phone": "0812-8782-7619"
       }
     ]
   },
@@ -194,7 +190,6 @@
     "total_battery": 0,
     "talis_installed": "2025-11-13",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -204,8 +199,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Gervasius Ndiken",
-        "phone": "0852-5418-3582"
+        "name": "Gerfas",
+        "phone": "0822-4703-0138"
       }
     ]
   },
@@ -236,7 +231,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -278,7 +272,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -289,7 +282,7 @@
     "contact_person": [
       {
         "name": "Sakarias Fatie",
-        "phone": "0812-4036-1739"
+        "phone": "0822-3986-3517"
       }
     ]
   },
@@ -320,7 +313,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -330,7 +322,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades",
+        "name": "Basrun HI Hala",
         "phone": "0812-4546-0745"
       }
     ]
@@ -362,7 +354,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -372,7 +363,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Sekdes",
+        "name": "Sakimun Sudaryanto",
         "phone": "0821-9522-0007"
       }
     ]
@@ -404,7 +395,6 @@
     "total_battery": 0,
     "talis_installed": "2025-03-04",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -415,7 +405,7 @@
     "contact_person": [
       {
         "name": "Charles Silalebit",
-        "phone": "0852-5622-5300"
+        "phone": "0859-2115-8463 / 0812-4828-3671"
       }
     ]
   },
@@ -446,7 +436,6 @@
     "total_battery": 0,
     "talis_installed": "2025-10-30",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -456,8 +445,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Roni",
-        "phone": "0852-1264-3636"
+        "name": "Lattu Pieter",
+        "phone": "0821-3362-5768"
       }
     ]
   },
@@ -488,7 +477,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -499,7 +487,7 @@
     "contact_person": [
       {
         "name": "Abadi Poipessy",
-        "phone": "0813-5401-2712"
+        "phone": "0812-4851-4784"
       }
     ]
   },
@@ -530,7 +518,6 @@
     "total_battery": 0,
     "talis_installed": "2025-11-07",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -541,7 +528,7 @@
     "contact_person": [
       {
         "name": "Joni Lesiela",
-        "phone": "0812-4055-6148"
+        "phone": "0812-4055-6148 / 0812-4800-5723"
       }
     ]
   },
@@ -572,7 +559,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-14",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -582,8 +568,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kamarudin Bugis",
-        "phone": "0812-4794-3174"
+        "name": "Ahmad Tapi Keliangin",
+        "phone": "0822-7157-4054"
       }
     ]
   },
@@ -614,7 +600,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -624,8 +609,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Pak sk imbu-imbu",
-        "phone": "+62 812-6002-0716  / +62 823-9610-4509"
+        "name": "Ruslan Karim",
+        "phone": "0822-3649-1468"
       }
     ]
   },
@@ -656,7 +641,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -698,7 +682,6 @@
     "total_battery": 0,
     "talis_installed": "2024-11-30",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -709,7 +692,7 @@
     "contact_person": [
       {
         "name": "Abraham Kaikatui",
-        "phone": "0821-5420-2462"
+        "phone": "0812-4476-2985"
       }
     ]
   },
@@ -740,7 +723,6 @@
     "total_battery": 0,
     "talis_installed": "2024-11-13",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -750,8 +732,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Herman Hayer",
-        "phone": "0878-2968-9328 / 0831-4627-1444"
+        "name": "Jonry Herman Hayer",
+        "phone": "0831-4627-0831"
       }
     ]
   },
@@ -782,7 +764,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -792,8 +773,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Pak Hud (Sk Beneran)",
-        "phone": "0821-9040-5607"
+        "name": "Hud Rijal",
+        "phone": "0838-4366-8964"
       }
     ]
   },
@@ -824,7 +805,6 @@
     "total_battery": 0,
     "talis_installed": "2025-04-29",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -866,7 +846,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -876,8 +855,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Fauzi Bin Usman",
-        "phone": "0823-4731-8449"
+        "name": "Ma Ani Yusuf",
+        "phone": "0852-4027-4639"
       }
     ]
   },
@@ -908,7 +887,6 @@
     "total_battery": 0,
     "talis_installed": "2025-09-06",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -918,7 +896,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Welem Djopari/Herman",
+        "name": "Welem Djopari",
         "phone": "0813-4187-5271"
       }
     ]
@@ -950,7 +928,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -960,8 +937,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades Kelo",
-        "phone": "0813-4151-4070"
+        "name": "Badrun Habib",
+        "phone": "0822-9102-6965"
       }
     ]
   },
@@ -992,7 +969,6 @@
     "total_battery": 0,
     "talis_installed": "2024-11-21",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1002,8 +978,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades",
-        "phone": "082399032162"
+        "name": "Raimon Samolo",
+        "phone": "0813-5119-8540"
       }
     ]
   },
@@ -1034,7 +1010,6 @@
     "total_battery": 0,
     "talis_installed": "2025-10-06",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1076,7 +1051,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1086,8 +1060,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Syawal Smurut",
-        "phone": "0813-4458-2853"
+        "name": "Habibi",
+        "phone": "0852-5690-8395"
       }
     ]
   },
@@ -1118,7 +1092,6 @@
     "total_battery": 0,
     "talis_installed": "2025-07-31",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1128,8 +1101,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Pak Mato",
-        "phone": "+62 822-1780-3487"
+        "name": "Elia Wararag",
+        "phone": "0821-9413-8197"
       }
     ]
   },
@@ -1160,7 +1133,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1171,7 +1143,7 @@
     "contact_person": [
       {
         "name": "Yohanis Baru",
-        "phone": "0821-9753-3880"
+        "phone": "0821-9753-3800"
       }
     ]
   },
@@ -1202,7 +1174,6 @@
     "total_battery": 0,
     "talis_installed": "2025-05-14",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1213,7 +1184,7 @@
     "contact_person": [
       {
         "name": "Obethnego Alarukin",
-        "phone": "0813-9719-9296"
+        "phone": "0823-9902-8869 / 0817-7549-3166"
       }
     ]
   },
@@ -1244,7 +1215,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-15",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1254,8 +1224,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Ayup Iek",
-        "phone": "0812-4844-2434"
+        "name": "Yulianus Asikasau",
+        "phone": "0821-2631-2637"
       }
     ]
   },
@@ -1286,7 +1256,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1297,7 +1266,7 @@
     "contact_person": [
       {
         "name": "Yunus Fiktor Fenanlabir",
-        "phone": "0821-9972-0621 / 0821-9015-4836"
+        "phone": "0822-3907-2352 / 0813-4388-1982"
       }
     ]
   },
@@ -1328,7 +1297,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.49",
@@ -1338,7 +1306,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Pak Uchez",
+        "name": "Aldo/ uchez",
         "phone": "0812-9226-7008"
       }
     ]
@@ -1370,7 +1338,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1412,7 +1379,6 @@
     "total_battery": 0,
     "talis_installed": "2025-10-08",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1422,8 +1388,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Abram Wonemseba",
-        "phone": "0823-9901-5586"
+        "name": "Abraham Wonemseba",
+        "phone": "0822-4742-5576"
       }
     ]
   },
@@ -1454,7 +1420,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1464,7 +1429,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Nimbrud A",
+        "name": "Nimrud A",
         "phone": "0821-1904-7371"
       }
     ]
@@ -1496,7 +1461,6 @@
     "total_battery": 0,
     "talis_installed": "2025-09-17",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.57",
@@ -1506,8 +1470,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Ridolof Lethulur",
-        "phone": "0823-1372-0205"
+        "name": "Mihel Letluhur",
+        "phone": "0821-9792-7195"
       }
     ]
   },
@@ -1538,7 +1502,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1548,8 +1511,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Heryono Toansiba",
-        "phone": "0823-9781-7341"
+        "name": "Haryono Toan Siba",
+        "phone": "0821-9837-9580"
       }
     ]
   },
@@ -1580,7 +1543,6 @@
     "total_battery": 0,
     "talis_installed": "2025-08-10",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1591,7 +1553,7 @@
     "contact_person": [
       {
         "name": "Yulianus Imburi",
-        "phone": "0823-9913-8604"
+        "phone": "0812-4520-9800"
       }
     ]
   },
@@ -1622,7 +1584,6 @@
     "total_battery": 0,
     "talis_installed": "2025-08-04",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1632,7 +1593,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Alvons",
+        "name": "Alvos",
         "phone": "0812-4852-5149"
       }
     ]
@@ -1664,7 +1625,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1675,7 +1635,7 @@
     "contact_person": [
       {
         "name": "Maurens Sayori",
-        "phone": "0838-9324-3936"
+        "phone": "0878-2605-1050"
       }
     ]
   },
@@ -1706,7 +1666,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-28",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.11.25",
@@ -1717,7 +1676,7 @@
     "contact_person": [
       {
         "name": "Bahtiar Jainudin",
-        "phone": "0819-1286-8129 / +62 821-4490-8194"
+        "phone": "0819-9888-5258"
       }
     ]
   },
@@ -1748,7 +1707,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1758,8 +1716,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades Oci",
-        "phone": "0831-1133-2500"
+        "name": "Albertus Souisa",
+        "phone": "838-4156-5109"
       }
     ]
   },
@@ -1790,7 +1748,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1800,8 +1757,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades",
-        "phone": "0812-4593-2259"
+        "name": "Sulasmi Munir Daud",
+        "phone": "0812-8037-3275"
       }
     ]
   },
@@ -1832,7 +1789,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1842,7 +1798,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Meksen Gerson Muray ",
+        "name": "Meksen Gerson",
         "phone": "0821-9565-0341"
       }
     ]
@@ -1874,7 +1830,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1885,7 +1840,7 @@
     "contact_person": [
       {
         "name": "Yance Bame",
-        "phone": "0812-3099-0907"
+        "phone": "0812-30990907"
       }
     ]
   },
@@ -1916,7 +1871,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-12",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.09",
@@ -1927,7 +1881,7 @@
     "contact_person": [
       {
         "name": "Malanton Kolatfeka",
-        "phone": "0821-9842-3151"
+        "phone": "0822-6776-2826"
       }
     ]
   },
@@ -1958,7 +1912,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -1968,8 +1921,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Pak Darwinto (Sk Beneran)",
-        "phone": "0821-1462-9212"
+        "name": "Darminto Migeraya",
+        "phone": "0853-4838-7659"
       }
     ]
   },
@@ -2000,7 +1953,6 @@
     "total_battery": 0,
     "talis_installed": "2024-11-19",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2042,7 +1994,6 @@
     "total_battery": 0,
     "talis_installed": "2024-11-29",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2052,8 +2003,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Sakeus Seuum",
-        "phone": "0813-4457-2896"
+        "name": "Sakeum Seuum",
+        "phone": "0852-4576-9921"
       }
     ]
   },
@@ -2084,7 +2035,6 @@
     "total_battery": 0,
     "talis_installed": "2025-08-06",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2094,8 +2044,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Alfa Yoteni",
-        "phone": "0852-4426-8385"
+        "name": "Nerius Sayori",
+        "phone": "0821-9768-6537"
       }
     ]
   },
@@ -2126,7 +2076,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2136,8 +2085,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades",
-        "phone": "0822-7103-2152"
+        "name": "Dahlan Kamai",
+        "phone": "0813-4148-7050"
       }
     ]
   },
@@ -2167,19 +2116,18 @@
     "battery_version": "talis5",
     "total_battery": 0,
     "talis_installed": "2024-11-20",
-    "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
+    "status_sites": "terestrial",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.73",
     "ip_gw_gs": "10.53.13.74",
-    "ip_snmp": "10.53.13.75",
+    "ip_snmp": "11.11.11.3",
     "subnet": "/29",
     "panel2_type": "new",
     "contact_person": [
       {
         "name": "Faisal Rumaday",
-        "phone": "0821-4741-3965"
+        "phone": "0822-7594-0390"
       }
     ]
   },
@@ -2210,7 +2158,6 @@
     "total_battery": 0,
     "talis_installed": "2025-01-16",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2252,7 +2199,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2262,8 +2208,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kiki",
-        "phone": "0821-9813-5815"
+        "name": "Silas Athabu",
+        "phone": "0821-9242-1092"
       }
     ]
   },
@@ -2294,7 +2240,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2305,7 +2250,7 @@
     "contact_person": [
       {
         "name": "Suwarno",
-        "phone": "0812-4027-9750"
+        "phone": "0822-9063-3352"
       }
     ]
   },
@@ -2336,7 +2281,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-05",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2347,7 +2291,7 @@
     "contact_person": [
       {
         "name": "Aloisius Ohoduan",
-        "phone": "0812-4792-1900 / 0821-9661-4979"
+        "phone": "0813-2747-0774"
       }
     ]
   },
@@ -2378,7 +2322,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-14",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2389,8 +2332,8 @@
     "tvd_site": true,
     "contact_person": [
       {
-        "name": "Emil Duwit",
-        "phone": null
+        "name": "Emil Dwit",
+        "phone": "0812-4719-4445"
       }
     ]
   },
@@ -2421,7 +2364,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2432,7 +2374,7 @@
     "contact_person": [
       {
         "name": "Yulianus Sorry",
-        "phone": "0822-3926-7544"
+        "phone": "0822-8949-3290"
       }
     ]
   },
@@ -2463,7 +2405,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2473,8 +2414,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Bendahara Sosepe",
-        "phone": "0813-1071-0694"
+        "name": "Sarif Nasir",
+        "phone": "0852-5626-9317"
       }
     ]
   },
@@ -2504,20 +2445,19 @@
     "battery_version": "mix",
     "total_battery": 0,
     "talis_installed": "2024-08-13",
-    "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
+    "status_sites": "terestrial",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
     "ip_gw_gs": "10.161.1.194",
-    "ip_snmp": "10.161.1.195",
+    "ip_snmp": "13.13.13.3",
     "subnet": "/29",
     "panel2_type": "new",
     "tvd_site": true,
     "contact_person": [
       {
-        "name": "Roni",
-        "phone": "0852-1264-3636"
+        "name": "Lattu Pieter",
+        "phone": "0821-3362-5768"
       }
     ]
   },
@@ -2548,7 +2488,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-29",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.12.217",
@@ -2558,8 +2497,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Haya Kaboli",
-        "phone": "0812-4176-7208"
+        "name": "Ruslan Sofyan",
+        "phone": "0821-9081-1364"
       }
     ]
   },
@@ -2590,7 +2529,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2600,8 +2538,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Samir Hi Amin",
-        "phone": "0859-0379-1698"
+        "name": "Samir HI Amin",
+        "phone": "0813-4645-1563"
       }
     ]
   },
@@ -2632,7 +2570,6 @@
     "total_battery": 0,
     "talis_installed": "2025-06-17",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2643,7 +2580,7 @@
     "contact_person": [
       {
         "name": "Ismail Idene",
-        "phone": "0852-5132-5621"
+        "phone": "0852-5232-5621"
       }
     ]
   },
@@ -2673,18 +2610,17 @@
     "battery_version": "jspro",
     "total_battery": 0,
     "talis_installed": "",
-    "status_sites": "non-terestrial",
-    "migration_status": "migrated",
+    "status_sites": "terestrial",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.33",
     "ip_gw_gs": "10.53.13.34",
-    "ip_snmp": "10.53.13.35",
+    "ip_snmp": "12.12.12.3",
     "subnet": "/29",
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Abd Rahim Payapo",
+        "name": "ABD Rahim Payapo",
         "phone": "0812-4763-3366"
       }
     ]
@@ -2716,7 +2652,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2726,8 +2661,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Paulinus Tenau",
-        "phone": "0823-9805-0196"
+        "name": "Paulus Tenau",
+        "phone": "0813-4421-6091"
       }
     ]
   },
@@ -2758,7 +2693,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.12.225",
@@ -2769,7 +2703,7 @@
     "contact_person": [
       {
         "name": "Risman Ibrahim",
-        "phone": "0821-8942-0358"
+        "phone": "0821-5204-7915"
       }
     ]
   },
@@ -2800,7 +2734,6 @@
     "total_battery": 0,
     "talis_installed": "2025-11-12",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.11.1",
@@ -2811,7 +2744,7 @@
     "contact_person": [
       {
         "name": "Irjan",
-        "phone": "0813-4133-2094"
+        "phone": "0878-2875-2181"
       }
     ]
   },
@@ -2842,7 +2775,6 @@
     "total_battery": 0,
     "talis_installed": "2025-11-08",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2852,7 +2784,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Istri Kades",
+        "name": "Simson Gofotor",
         "phone": "0853-9660-9006"
       }
     ]
@@ -2884,7 +2816,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2895,7 +2826,7 @@
     "contact_person": [
       {
         "name": "Djohan Lololuan",
-        "phone": "0878-2968-8377"
+        "phone": "0878-3039-4424"
       }
     ]
   },
@@ -2926,7 +2857,6 @@
     "total_battery": 0,
     "talis_installed": "2024-12-24",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.113",
@@ -2937,7 +2867,7 @@
     "contact_person": [
       {
         "name": "Supriyadi Satim",
-        "phone": "0838-2137-5675"
+        "phone": "0821-4581-6677"
       }
     ]
   },
@@ -2968,7 +2898,6 @@
     "total_battery": 0,
     "talis_installed": "2024-10-19",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -2978,8 +2907,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Kades",
-        "phone": "0853-4177-1491"
+        "name": "Nafendi Karabu",
+        "phone": "0813-2747-7970"
       }
     ]
   },
@@ -3010,7 +2939,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.11.249",
@@ -3021,7 +2949,7 @@
     "contact_person": [
       {
         "name": "Rasid Haji Usman",
-        "phone": "0822-9285-9642"
+        "phone": "0813-4072-4349"
       }
     ]
   },
@@ -3052,7 +2980,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3062,7 +2989,7 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Pak SK",
+        "name": "Jailan",
         "phone": "0821-2350-2510"
       }
     ]
@@ -3094,7 +3021,6 @@
     "total_battery": 0,
     "talis_installed": "2025-11-14",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.50.11",
@@ -3104,8 +3030,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Fransiskus Mahuze",
-        "phone": "0813-4096-6760"
+        "name": "Frasnsiskus Mahute",
+        "phone": "0823-9989-7486"
       }
     ]
   },
@@ -3136,7 +3062,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": "10.53.13.25",
@@ -3147,7 +3072,7 @@
     "contact_person": [
       {
         "name": "Welem Ngaibawar",
-        "phone": "0812-2491-4712"
+        "phone": "0852-8242-6274"
       }
     ]
   },
@@ -3178,7 +3103,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3188,8 +3112,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Faisal (Sk Beneran)",
-        "phone": "0812-8042-1103"
+        "name": "Nita Wijayanti",
+        "phone": "0852-3910-2128"
       }
     ]
   },
@@ -3220,7 +3144,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3262,7 +3185,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3273,7 +3195,7 @@
     "contact_person": [
       {
         "name": "Stefen Fidlela",
-        "phone": "0822-3845-1807"
+        "phone": "0823-9848-9154/0823-9893-5362/0823-9928-4248/0822-3845-1807/0821-9663-6831"
       }
     ]
   },
@@ -3304,7 +3226,6 @@
     "total_battery": 0,
     "talis_installed": "",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3315,7 +3236,7 @@
     "contact_person": [
       {
         "name": "Philipus Yatawau",
-        "phone": "0812-4078-4195"
+        "phone": "0853-5761-8576"
       }
     ]
   },
@@ -3346,7 +3267,6 @@
     "total_battery": 0,
     "talis_installed": "2025-10-06",
     "status_sites": "non-terestrial",
-    "migration_status": "non-migrated",
     "battery_list": [],
     "cabinet_list": [],
     "ip_gw_lc": null,
@@ -3356,8 +3276,8 @@
     "panel2_type": "new",
     "contact_person": [
       {
-        "name": "Isak Samuel Torey",
-        "phone": null
+        "name": "Isak Samuel Toriyai",
+        "phone": "0853-4410-5144"
       }
     ]
   }
