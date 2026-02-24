@@ -66,6 +66,8 @@ func SetupRoutes(r *gin.Engine) {
 		tt.GET("/refresh", ttHandler.Refresh)
 		tt.GET("/progress/:ticketNumber", ttHandler.GetProgress)
 		tt.PUT("/progress/:ticketNumber", ttHandler.AddProgress)
-		tt.PUT("/:ticketNumber", ttHandler.CloseTicket)
+		tt.PUT("/close/:ticketNumber", ttHandler.CloseTicket)
+		tt.PUT("/:ticketNumber", ttHandler.UpdateTicket)
+		tt.DELETE("/:ticketNumber", ttHandler.DeleteTicket)
 	}
 }

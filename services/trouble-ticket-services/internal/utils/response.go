@@ -18,11 +18,34 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+type PaginationMetadata struct {
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"totalPages"`
+}
+
+type PaginatedResponse struct {
+	Status     string             `json:"status"`
+	Message    string             `json:"message"`
+	Data       interface{}        `json:"data"`
+	Pagination PaginationMetadata `json:"pagination"`
+}
+
 func Success(c *gin.Context, message string, data interface{}) {
 	c.JSON(http.StatusOK, SuccessResponse{
 		Status:  "success",
 		Message: message,
 		Data:    data,
+	})
+}
+
+func SuccessPaginated(c *gin.Context, message string, data interface{}, meta PaginationMetadata) {
+	c.JSON(http.StatusOK, PaginatedResponse{
+		Status:     "success",
+		Message:    message,
+		Data:       data,
+		Pagination: meta,
 	})
 }
 

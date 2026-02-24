@@ -88,6 +88,20 @@ type slaCacheEntry struct {
 	Unit    string  `json:"unit"`
 }
 
+type siteSearchResponseItem struct {
+	SiteID   string `json:"siteId"`
+	SiteName string `json:"siteName"`
+}
+
+type siteSearchResponsePayload struct {
+	Data []siteSearchResponseItem `json:"data"`
+}
+
+type siteSearchResponse struct {
+	Success bool                      `json:"success"`
+	Data    siteSearchResponsePayload `json:"data"`
+}
+
 // GetSiteByID fetches a single site from sites-services with Redis caching.
 // Cache key: tt:site:{siteId}, TTL: 1 hour
 // Endpoint: GET /api/v1/sites/:siteId
@@ -138,6 +152,43 @@ func GetSiteByID(siteID string) (*SiteData, error) {
 	cache.Set(ctx, cacheKey, *site, time.Hour)
 
 	return site, nil
+}
+
+// SearchSites searches for sites by name/id in sites-services.
+// Endpoint: GET /api/v1/sites?search={query}&limit=100
+func SearchSites(query string) ([]string, error) {
+	if query == "" {
+		return []string{}, nil
+	}
+
+	url := fmt.Sprintf("%s/api/v1/sites?search=%s&limit=100", config.App.External.SitesServiceURL, query)
+
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call sites-services for search: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read sites-services search response: %w", err)
+	}
+
+	var result siteSearchResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse sites-services search response: %w", err)
+	}
+
+	if !result.Success {
+		return nil, fmt.Errorf("sites-services search returned success=false")
+	}
+
+	siteIDs := make([]string, len(result.Data.Data))
+	for i, s := range result.Data.Data {
+		siteIDs[i] = s.SiteID
+	}
+
+	return siteIDs, nil
 }
 
 // SlaResult holds slaAverage and slaUnit for a site
@@ -207,6 +258,10 @@ func GetSlaForSite(siteID string, startDate, endDate string) (slaAverage float64
 	var result slaResponse
 	if err := json.Unmarshal(body, &result); err != nil {
 		return 0, "", fmt.Errorf("failed to parse sla-services response: %w", err)
+	}
+
+	if !result.Success {
+		return 0, "", fmt.Errorf("sla-services returned error for siteId: %s", siteID)
 	}
 
 	// Extract from data.sites[0].siteSla (per-site SLA)

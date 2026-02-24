@@ -19,6 +19,20 @@ JOIN type_ticket ttype ON tt.ticket_type_id = ttype.id
 JOIN pic p ON tt.pic_id = p.id
 WHERE tt.ticket_number = $1;
 
+-- name: CountTroubleTickets :one
+SELECT COUNT(*) FROM trouble_ticket tt
+WHERE
+    ($1::text = '' OR tt.status::text = $1)
+    AND ($2::integer = 0 OR tt.ticket_type_id = $2)
+    AND (
+        ($3::text = '' AND cardinality($4::text[]) = 0)
+        OR ($3::text != '' AND (
+            tt.site_id ILIKE '%' || $3 || '%'
+            OR tt.ticket_number ILIKE '%' || $3 || '%'
+        ))
+        OR tt.site_id = ANY($4::text[])
+    );
+
 -- name: ListTroubleTickets :many
 SELECT
     tt.id,
@@ -41,7 +55,16 @@ JOIN pic p ON tt.pic_id = p.id
 WHERE
     ($1::text = '' OR tt.status::text = $1)
     AND ($2::integer = 0 OR tt.ticket_type_id = $2)
-ORDER BY tt.created_at DESC;
+    AND (
+        ($3::text = '' AND cardinality($6::text[]) = 0)
+        OR ($3::text != '' AND (
+            tt.site_id ILIKE '%' || $3 || '%'
+            OR tt.ticket_number ILIKE '%' || $3 || '%'
+        ))
+        OR tt.site_id = ANY($6::text[])
+    )
+ORDER BY tt.created_at DESC
+LIMIT $4 OFFSET $5;
 
 -- name: GetAllTroubleTickets :many
 SELECT

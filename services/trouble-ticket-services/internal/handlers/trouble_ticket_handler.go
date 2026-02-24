@@ -43,14 +43,20 @@ type ticketListItem struct {
 	BatteryVersion string                       `json:"batteryVersion"`
 	ContactPerson  []services.ContactPersonItem `json:"contactPerson"`
 	Problem        []problemItem                `json:"problem"`
-	Pic            string                       `json:"pic"`
+	Pic            []picItem                    `json:"pic"`
 	PlanCM         string                       `json:"planCm"`
 	Action         string                       `json:"action"`
 	Status         string                       `json:"status"`
 }
 
 type problemItem struct {
-	ProblemName string `json:"problem_name"`
+	ProblemID   int32  `json:"problemId"`
+	ProblemName string `json:"problemName"`
+}
+
+type picItem struct {
+	PicID   int32  `json:"picId"`
+	PicName string `json:"picName"`
 }
 
 type progressItem struct {
@@ -125,6 +131,12 @@ func (h *TroubleTicketHandler) Create(c *gin.Context) {
 	dateDown, err := time.Parse("2006-01-02", req.DateDown)
 	if err != nil {
 		utils.BadRequest(c, "Invalid dateDown format, use YYYY-MM-DD")
+		return
+	}
+
+	// Validate that the site exists in sites-services
+	if _, err := services.GetSiteByID(req.SiteID); err != nil {
+		utils.BadRequest(c, fmt.Sprintf("Site not found: %s", req.SiteID))
 		return
 	}
 
@@ -208,10 +220,72 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 
 	statusFilter := c.Query("status")
 	ticketTypeFilter, _ := strconv.ParseInt(c.Query("ticketType"), 10, 32)
+	siteIDFilter := c.Query("siteId")
+	siteNameFilter := c.Query("siteName")
+
+	limitParam, _ := strconv.ParseInt(c.Query("limit"), 10, 32)
+	pageParam, _ := strconv.ParseInt(c.Query("page"), 10, 32)
+	if limitParam <= 0 {
+		limitParam = 100
+	}
+	if pageParam <= 0 {
+		pageParam = 1
+	}
+	offset := (pageParam - 1) * limitParam
+
+	emptyPagination := utils.PaginationMetadata{
+		Page:       int(pageParam),
+		Limit:      int(limitParam),
+		Total:      0,
+		TotalPages: 0,
+	}
+
+	// If siteName is provided, search external sites-services to get matching site IDs.
+	// Early-return empty if no sites match — prevents SQL from ignoring the filter.
+	siteIDsFromName := []string{}
+	if siteNameFilter != "" {
+		ids, err := services.SearchSites(siteNameFilter)
+		if err != nil {
+			h.logger.Warn("Failed to search sites by name", zap.String("siteName", siteNameFilter), zap.Error(err))
+			utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", []ticketListItem{}, emptyPagination)
+			return
+		}
+		if len(ids) == 0 {
+			utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", []ticketListItem{}, emptyPagination)
+			return
+		}
+		siteIDsFromName = ids
+	}
+
+	// Get total count for pagination metadata
+	total, err := h.queries.CountTroubleTickets(ctx, sqlcdb.CountTroubleTicketsParams{
+		Column1: statusFilter,
+		Column2: int32(ticketTypeFilter),
+		Column3: siteIDFilter,
+		Column4: siteIDsFromName,
+	})
+	if err != nil {
+		h.logger.Warn("Failed to count trouble tickets", zap.Error(err))
+	}
+
+	totalPages := 0
+	if total > 0 {
+		totalPages = int((total + int64(limitParam) - 1) / int64(limitParam))
+	}
+	pagination := utils.PaginationMetadata{
+		Page:       int(pageParam),
+		Limit:      int(limitParam),
+		Total:      total,
+		TotalPages: totalPages,
+	}
 
 	tickets, err := h.queries.ListTroubleTickets(ctx, sqlcdb.ListTroubleTicketsParams{
 		Column1: statusFilter,
 		Column2: int32(ticketTypeFilter),
+		Column3: siteIDFilter,
+		Limit:   int32(limitParam),
+		Offset:  int32(offset),
+		Column6: siteIDsFromName,
 	})
 	if err != nil {
 		utils.HandleError(c, err, "Failed to get trouble tickets", h.logger)
@@ -219,7 +293,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 	}
 
 	if len(tickets) == 0 {
-		utils.Success(c, "Trouble tickets retrieved successfully", []ticketListItem{})
+		utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", []ticketListItem{}, pagination)
 		return
 	}
 
@@ -244,6 +318,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 	problemMap := make(map[string][]problemItem)
 	for _, p := range problemRows {
 		problemMap[p.TicketNumber] = append(problemMap[p.TicketNumber], problemItem{
+			ProblemID:   p.ProblemID,
 			ProblemName: p.ProblemName,
 		})
 	}
@@ -280,7 +355,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 			BatteryVersion: site.BatteryVersion,
 			ContactPerson:  site.ContactPerson,
 			Problem:        problemMap[t.TicketNumber],
-			Pic:            t.PicName,
+			Pic:            []picItem{{PicID: t.PicID, PicName: t.PicName}},
 			PlanCM:         t.PlanCm,
 			Action:         t.Action,
 			Status:         string(t.Status),
@@ -294,13 +369,22 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		result = append(result, item)
 	}
 
-	utils.Success(c, "Trouble tickets retrieved successfully", result)
+	utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", result, pagination)
 }
 
 // GetProgress handles GET /api/v1/trouble-ticket/progress/:ticketNumber
 func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 	ctx := c.Request.Context()
 	ticketNumber := c.Param("ticketNumber")
+
+	limitParam, _ := strconv.ParseInt(c.Query("limit"), 10, 32)
+	pageParam, _ := strconv.ParseInt(c.Query("page"), 10, 32)
+	if limitParam <= 0 {
+		limitParam = 20
+	}
+	if pageParam <= 0 {
+		pageParam = 1
+	}
 
 	ticket, err := h.queries.GetTroubleTicket(ctx, ticketNumber)
 	if err != nil {
@@ -343,12 +427,27 @@ func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 		problemIDs[i] = p.ProblemID
 	}
 
-	progressItems := make([]progressItem, len(progressList))
-	for i, p := range progressList {
-		progressItems[i] = progressItem{
+	// Paginate progress items
+	totalProgress := int64(len(progressList))
+	offset := (pageParam - 1) * limitParam
+	end := offset + limitParam
+	if offset > int64(totalProgress) {
+		offset = int64(totalProgress)
+	}
+	if end > int64(totalProgress) {
+		end = int64(totalProgress)
+	}
+	progressItems := make([]progressItem, 0, end-offset)
+	for _, p := range progressList[offset:end] {
+		progressItems = append(progressItems, progressItem{
 			Date:   p.Date.Time.Format("2006-01-02"),
 			Action: p.Action,
-		}
+		})
+	}
+
+	totalProgressPages := 0
+	if totalProgress > 0 {
+		totalProgressPages = int((totalProgress + int64(limitParam) - 1) / int64(limitParam))
 	}
 
 	var slaAvgPtr *float64
@@ -372,13 +471,19 @@ func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 		"slaUnit":        slaUnit,
 		"problemId":      problemIDs,
 		"picId":          ticket.PicID,
+		"picName":        ticket.PicName,
 		"planCm":         ticket.PlanCm,
 		"action":         ticket.Action,
 		"status":         string(ticket.Status),
 		"progress":       progressItems,
 	}
 
-	utils.Success(c, "Trouble ticket retrieved successfully", result)
+	utils.SuccessPaginated(c, "Trouble ticket retrieved successfully", result, utils.PaginationMetadata{
+		Page:       int(pageParam),
+		Limit:      int(limitParam),
+		Total:      totalProgress,
+		TotalPages: totalProgressPages,
+	})
 }
 
 // AddProgress handles PUT /api/v1/trouble-ticket/progress/:ticketNumber
@@ -507,6 +612,110 @@ func (h *TroubleTicketHandler) CloseTicket(c *gin.Context) {
 	}
 
 	utils.Success(c, "Trouble ticket closed successfully", ticketResp)
+}
+
+// UpdateTicket handles PUT /api/v1/trouble-ticket/:ticketNumber
+func (h *TroubleTicketHandler) UpdateTicket(c *gin.Context) {
+	ctx := c.Request.Context()
+	ticketNumber := c.Param("ticketNumber")
+
+	ticket, err := h.queries.GetTroubleTicket(ctx, ticketNumber)
+	if err != nil {
+		utils.NotFound(c, "Trouble ticket not found")
+		return
+	}
+
+	if string(ticket.Status) == "closed" {
+		utils.BadRequest(c, "Cannot edit a closed ticket")
+		return
+	}
+
+	var req struct {
+		TicketType int32   `json:"ticketType" binding:"required"`
+		DateDown   string  `json:"dateDown" binding:"required"`
+		SiteID     string  `json:"siteId" binding:"required"`
+		ProblemID  []int32 `json:"problemId" binding:"required,min=1"`
+		PicID      int32   `json:"picId" binding:"required"`
+		PlanCM     string  `json:"planCM"`
+		Action     string  `json:"action" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	// Validate that the site exists in sites-services
+	if _, siteErr := services.GetSiteByID(req.SiteID); siteErr != nil {
+		utils.BadRequest(c, fmt.Sprintf("Site not found: %s", req.SiteID))
+		return
+	}
+
+	// Re-fetch SLA for the (possibly new) site
+	startDate := utils.FirstDayOfMonth().Format("2006-01-02")
+	endDate := utils.LastDayOfMonth().Format("2006-01-02")
+	slaAvg, _, slaErr := services.GetSlaForSite(req.SiteID, startDate, endDate)
+	if slaErr != nil {
+		h.logger.Warn("Failed to fetch SLA on update", zap.Error(slaErr))
+		slaAvg = 0
+	}
+
+	// Update the trouble_ticket row
+	pool := database.GetDB()
+	_, err = pool.Exec(ctx,
+		"UPDATE trouble_ticket SET ticket_type_id=$1, date_down=$2, site_id=$3, pic_id=$4, plan_cm=$5, action=$6, sla_avg=$7 WHERE ticket_number=$8",
+		req.TicketType, req.DateDown, req.SiteID, req.PicID, req.PlanCM, req.Action, fmt.Sprintf("%.2f", slaAvg), ticketNumber,
+	)
+	if err != nil {
+		utils.HandleError(c, err, "Failed to update trouble ticket", h.logger)
+		return
+	}
+
+	// Replace problem associations
+	if err := h.queries.DeleteTroubleTicketProblems(ctx, ticketNumber); err != nil {
+		h.logger.Warn("Failed to clear old problems on update", zap.Error(err))
+	}
+	for _, problemID := range req.ProblemID {
+		if _, err := h.queries.CreateTroubleTicketProblem(ctx, sqlcdb.CreateTroubleTicketProblemParams{
+			TicketNumber: ticketNumber,
+			ProblemID:    problemID,
+		}); err != nil {
+			h.logger.Warn("Failed to insert problem on update", zap.Int32("problemID", problemID), zap.Error(err))
+		}
+	}
+
+	slaAvgPtr := &slaAvg
+	ticketResp := ticketResponse{
+		TicketNumber: ticketNumber,
+		TicketTypeID: ticket.TicketTypeID,
+		DateDown:     ticket.DateDown.Time.Format("2006-01-02"),
+		SiteID:       req.SiteID,
+		SlaAvg:       slaAvgPtr,
+		PicID:        req.PicID,
+		PlanCm:       req.PlanCM,
+		Action:       req.Action,
+		Status:       string(ticket.Status),
+	}
+
+	utils.Success(c, "Trouble ticket updated successfully", ticketResp)
+}
+
+// DeleteTicket handles DELETE /api/v1/trouble-ticket/:ticketNumber
+func (h *TroubleTicketHandler) DeleteTicket(c *gin.Context) {
+	ctx := c.Request.Context()
+	ticketNumber := c.Param("ticketNumber")
+
+	if _, err := h.queries.GetTroubleTicket(ctx, ticketNumber); err != nil {
+		utils.NotFound(c, "Trouble ticket not found")
+		return
+	}
+
+	pool := database.GetDB()
+	if _, err := pool.Exec(ctx, "DELETE FROM trouble_ticket WHERE ticket_number=$1", ticketNumber); err != nil {
+		utils.HandleError(c, err, "Failed to delete trouble ticket", h.logger)
+		return
+	}
+
+	utils.Success(c, "Trouble ticket deleted successfully", nil)
 }
 
 // Refresh handles GET /api/v1/trouble-ticket/refresh

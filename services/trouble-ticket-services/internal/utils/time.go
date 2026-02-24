@@ -10,9 +10,26 @@ func DurationDownHours(dateDown time.Time) float64 {
 	return time.Since(dateDown).Hours()
 }
 
-// DurationDownDays calculates days since the given date, returns e.g. "178 Hari"
+// DurationDownDays calculates days down using exclusive end date convention.
+// End date = yesterday (today - 1). Both dates are truncated to midnight to avoid
+// time-of-day skew. Example: dateDown=2025-08-17, today=2026-02-24 → 190 Hari.
 func DurationDownDays(dateDown time.Time) string {
-	days := int(time.Since(dateDown).Hours() / 24)
+	now := time.Now().In(dateDown.Location())
+
+	// Normalisasi start (dateDown) ke midnight
+	start := time.Date(dateDown.Year(), dateDown.Month(), dateDown.Day(), 0, 0, 0, 0, dateDown.Location())
+
+	// EndDate = kemarin (today - 1 day), lalu normalisasi ke midnight
+	yesterday := now.AddDate(0, 0, -1)
+	end := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, yesterday.Location())
+
+	// Eksklusif standar: end - start
+	days := int(end.Sub(start).Hours() / 24)
+
+	if days < 0 {
+		days = 0
+	}
+
 	return fmt.Sprintf("%d Hari", days)
 }
 
