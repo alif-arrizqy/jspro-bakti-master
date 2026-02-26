@@ -605,25 +605,25 @@ func (h *TroubleTicketHandler) UpdateProgress(c *gin.Context) {
 		return
 	}
 
-	pool := database.GetDB()
-	result, err := pool.Exec(ctx,
-		"UPDATE trouble_ticket_progress SET date=$1, action=$2 WHERE id=$3 AND ticket_number=$4",
-		date, req.Action, int32(progressID), ticketNumber,
-	)
+	var pgDate pgtype.Date
+	_ = pgDate.Scan(date)
+
+	updated, err := h.queries.UpdateTroubleTicketProgress(ctx, sqlcdb.UpdateTroubleTicketProgressParams{
+		Date:         pgDate,
+		Action:       req.Action,
+		ID:           int32(progressID),
+		TicketNumber: ticketNumber,
+	})
 	if err != nil {
-		utils.HandleError(c, err, "Failed to update progress", h.logger)
-		return
-	}
-	if result.RowsAffected() == 0 {
 		utils.NotFound(c, "Progress entry not found")
 		return
 	}
 
 	utils.Success(c, "Progress updated successfully", gin.H{
-		"id":           progressID,
-		"ticketNumber": ticketNumber,
-		"date":         req.Date,
-		"action":       req.Action,
+		"id":           updated.ID,
+		"ticketNumber": updated.TicketNumber,
+		"date":         updated.Date.Time.Format("2006-01-02"),
+		"action":       updated.Action,
 	})
 }
 
@@ -650,16 +650,10 @@ func (h *TroubleTicketHandler) DeleteProgress(c *gin.Context) {
 		return
 	}
 
-	pool := database.GetDB()
-	result, err := pool.Exec(ctx,
-		"DELETE FROM trouble_ticket_progress WHERE id=$1 AND ticket_number=$2",
-		int32(progressID), ticketNumber,
-	)
-	if err != nil {
-		utils.HandleError(c, err, "Failed to delete progress", h.logger)
-		return
-	}
-	if result.RowsAffected() == 0 {
+	if err := h.queries.DeleteTroubleTicketProgress(ctx, sqlcdb.DeleteTroubleTicketProgressParams{
+		ID:           int32(progressID),
+		TicketNumber: ticketNumber,
+	}); err != nil {
 		utils.NotFound(c, "Progress entry not found")
 		return
 	}
