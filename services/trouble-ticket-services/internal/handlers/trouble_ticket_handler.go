@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"trouble-ticket-services/internal/database"
 	sqlcdb "trouble-ticket-services/internal/database/sqlc"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/xuri/excelize/v2"
 	"go.uber.org/zap"
 )
 
@@ -60,6 +62,7 @@ type picItem struct {
 }
 
 type progressItem struct {
+	ID     int32  `json:"id"`
 	Date   string `json:"date"`
 	Action string `json:"action"`
 }
@@ -109,6 +112,49 @@ func numericToFloat64(n pgtype.Numeric) *float64 {
 	return &val
 }
 
+// intersectStringSlices returns elements present in both slices
+func intersectStringSlices(a, b []string) []string {
+	set := make(map[string]bool, len(b))
+	for _, v := range b {
+		set[v] = true
+	}
+	result := []string{}
+	for _, v := range a {
+		if set[v] {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+// buildSiteIDsFromFilters resolves site IDs from siteName and province filters.
+func (h *TroubleTicketHandler) buildSiteIDsFromFilters(siteNameFilter, provinceFilter string) []string {
+	siteIDsFromName := []string{}
+	if siteNameFilter != "" {
+		ids, err := services.SearchSites(siteNameFilter)
+		if err != nil {
+			h.logger.Warn("Failed to search sites by name", zap.String("siteName", siteNameFilter), zap.Error(err))
+		} else {
+			siteIDsFromName = ids
+		}
+	}
+
+	if provinceFilter != "" {
+		ids, err := services.SearchSitesByProvince(provinceFilter)
+		if err != nil {
+			h.logger.Warn("Failed to search sites by province", zap.String("province", provinceFilter), zap.Error(err))
+		} else {
+			if siteNameFilter != "" {
+				// both filters: intersection
+				siteIDsFromName = intersectStringSlices(siteIDsFromName, ids)
+			} else {
+				siteIDsFromName = ids
+			}
+		}
+	}
+	return siteIDsFromName
+}
+
 // Create handles POST /api/v1/trouble-ticket
 func (h *TroubleTicketHandler) Create(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -146,21 +192,18 @@ func (h *TroubleTicketHandler) Create(c *gin.Context) {
 	slaAvg, _, slaErr := services.GetSlaForSite(req.SiteID, startDate, endDate)
 	if slaErr != nil {
 		h.logger.Warn("Failed to fetch SLA, setting default to 0", zap.Error(slaErr))
-		slaAvg = 0 // Default to 0 if fetching fails
+		slaAvg = 0
 	}
 
-	// Generate unique ticket number
 	ticketNumber, err := h.generateUniqueTicketNumber(ctx)
 	if err != nil {
 		utils.HandleError(c, err, "Failed to generate ticket number", h.logger)
 		return
 	}
 
-	// Prepare sla_avg — always store the value (default 0 if error occurred)
 	var slaAvgNumeric pgtype.Numeric
 	_ = slaAvgNumeric.Scan(fmt.Sprintf("%.2f", slaAvg))
 
-	// Prepare date for pgtype
 	var pgDate pgtype.Date
 	_ = pgDate.Scan(dateDown)
 
@@ -179,7 +222,6 @@ func (h *TroubleTicketHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Insert problem associations
 	for _, problemID := range req.ProblemID {
 		_, err := h.queries.CreateTroubleTicketProblem(ctx, sqlcdb.CreateTroubleTicketProblemParams{
 			TicketNumber: ticketNumber,
@@ -193,7 +235,6 @@ func (h *TroubleTicketHandler) Create(c *gin.Context) {
 		}
 	}
 
-	// Convert database response to snake_case format
 	slaAvgPtr := numericToFloat64(ticket.SlaAvg)
 	ticketResp := ticketResponse{
 		TicketNumber: ticket.TicketNumber,
@@ -222,6 +263,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 	ticketTypeFilter, _ := strconv.ParseInt(c.Query("ticketType"), 10, 32)
 	siteIDFilter := c.Query("siteId")
 	siteNameFilter := c.Query("siteName")
+	provinceFilter := c.Query("province")
 
 	limitParam, _ := strconv.ParseInt(c.Query("limit"), 10, 32)
 	pageParam, _ := strconv.ParseInt(c.Query("page"), 10, 32)
@@ -240,24 +282,14 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		TotalPages: 0,
 	}
 
-	// If siteName is provided, search external sites-services to get matching site IDs.
-	// Early-return empty if no sites match — prevents SQL from ignoring the filter.
-	siteIDsFromName := []string{}
-	if siteNameFilter != "" {
-		ids, err := services.SearchSites(siteNameFilter)
-		if err != nil {
-			h.logger.Warn("Failed to search sites by name", zap.String("siteName", siteNameFilter), zap.Error(err))
-			utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", []ticketListItem{}, emptyPagination)
-			return
-		}
-		if len(ids) == 0 {
-			utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", []ticketListItem{}, emptyPagination)
-			return
-		}
-		siteIDsFromName = ids
+	siteIDsFromName := h.buildSiteIDsFromFilters(siteNameFilter, provinceFilter)
+
+	// If siteName or province filter was provided but returned no sites, return empty
+	if (siteNameFilter != "" || provinceFilter != "") && len(siteIDsFromName) == 0 {
+		utils.SuccessPaginated(c, "Trouble tickets retrieved successfully", []ticketListItem{}, emptyPagination)
+		return
 	}
 
-	// Get total count for pagination metadata
 	total, err := h.queries.CountTroubleTickets(ctx, sqlcdb.CountTroubleTicketsParams{
 		Column1: statusFilter,
 		Column2: int32(ticketTypeFilter),
@@ -297,7 +329,6 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	// Collect unique ticket numbers and site IDs for batch lookups
 	ticketNumbers := make([]string, len(tickets))
 	siteIDs := make([]string, 0, len(tickets))
 	siteIDSet := make(map[string]bool)
@@ -309,7 +340,6 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		}
 	}
 
-	// Batch fetch problems for all tickets
 	problemRows, err := h.queries.GetTroubleTicketProblemsByTicketNumbers(ctx, ticketNumbers)
 	if err != nil {
 		h.logger.Warn("Failed to fetch problems", zap.Error(err))
@@ -323,7 +353,6 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		})
 	}
 
-	// Batch fetch site data and SLA data from external services
 	startDate := utils.FirstDayOfMonth().Format("2006-01-02")
 	endDate := utils.LastDayOfMonth().Format("2006-01-02")
 	siteMap, _ := services.BuildSiteMap(siteIDs)
@@ -404,7 +433,6 @@ func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 		return
 	}
 
-	// Fetch site data from sites-services
 	site, err := services.GetSiteByID(ticket.SiteID)
 	if err != nil {
 		h.logger.Warn("Failed to fetch site data", zap.String("siteId", ticket.SiteID), zap.Error(err))
@@ -414,7 +442,6 @@ func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 		}
 	}
 
-	// Fetch SLA from sla-services for current month
 	startDate := utils.FirstDayOfMonth().Format("2006-01-02")
 	endDate := utils.LastDayOfMonth().Format("2006-01-02")
 	slaAvg, slaUnit, slaErr := services.GetSlaForSite(ticket.SiteID, startDate, endDate)
@@ -427,7 +454,6 @@ func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 		problemIDs[i] = p.ProblemID
 	}
 
-	// Paginate progress items
 	totalProgress := int64(len(progressList))
 	offset := (pageParam - 1) * limitParam
 	end := offset + limitParam
@@ -440,6 +466,7 @@ func (h *TroubleTicketHandler) GetProgress(c *gin.Context) {
 	progressItems := make([]progressItem, 0, end-offset)
 	for _, p := range progressList[offset:end] {
 		progressItems = append(progressItems, progressItem{
+			ID:     p.ID,
 			Date:   p.Date.Time.Format("2006-01-02"),
 			Action: p.Action,
 		})
@@ -497,7 +524,6 @@ func (h *TroubleTicketHandler) AddProgress(c *gin.Context) {
 		return
 	}
 
-	// Validate ticket status - cannot add progress if ticket is closed
 	fmt.Println(ticket.Status)
 	if string(ticket.Status) == "closed" {
 		utils.BadRequest(c, "Cannot add progress to a closed ticket")
@@ -541,7 +567,107 @@ func (h *TroubleTicketHandler) AddProgress(c *gin.Context) {
 	utils.Success(c, "Progress added successfully", progressResp)
 }
 
-// CloseTicket handles PUT /api/v1/trouble-ticket/:ticketNumber
+// UpdateProgress handles PUT /api/v1/trouble-ticket/progress/:ticketNumber/:progressId
+func (h *TroubleTicketHandler) UpdateProgress(c *gin.Context) {
+	ctx := c.Request.Context()
+	ticketNumber := c.Param("ticketNumber")
+	progressIDStr := c.Param("progressId")
+
+	progressID, err := strconv.ParseInt(progressIDStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "Invalid progressId")
+		return
+	}
+
+	// Verify ticket exists
+	ticket, err := h.queries.GetTroubleTicket(ctx, ticketNumber)
+	if err != nil {
+		utils.NotFound(c, "Trouble ticket not found")
+		return
+	}
+	if string(ticket.Status) == "closed" {
+		utils.BadRequest(c, "Cannot edit progress of a closed ticket")
+		return
+	}
+
+	var req struct {
+		Date   string `json:"date" binding:"required"`
+		Action string `json:"action" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", req.Date)
+	if err != nil {
+		utils.BadRequest(c, "Invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	pool := database.GetDB()
+	result, err := pool.Exec(ctx,
+		"UPDATE trouble_ticket_progress SET date=$1, action=$2 WHERE id=$3 AND ticket_number=$4",
+		date, req.Action, int32(progressID), ticketNumber,
+	)
+	if err != nil {
+		utils.HandleError(c, err, "Failed to update progress", h.logger)
+		return
+	}
+	if result.RowsAffected() == 0 {
+		utils.NotFound(c, "Progress entry not found")
+		return
+	}
+
+	utils.Success(c, "Progress updated successfully", gin.H{
+		"id":           progressID,
+		"ticketNumber": ticketNumber,
+		"date":         req.Date,
+		"action":       req.Action,
+	})
+}
+
+// DeleteProgress handles DELETE /api/v1/trouble-ticket/progress/:ticketNumber/:progressId
+func (h *TroubleTicketHandler) DeleteProgress(c *gin.Context) {
+	ctx := c.Request.Context()
+	ticketNumber := c.Param("ticketNumber")
+	progressIDStr := c.Param("progressId")
+
+	progressID, err := strconv.ParseInt(progressIDStr, 10, 32)
+	if err != nil {
+		utils.BadRequest(c, "Invalid progressId")
+		return
+	}
+
+	// Verify ticket exists
+	ticket, err := h.queries.GetTroubleTicket(ctx, ticketNumber)
+	if err != nil {
+		utils.NotFound(c, "Trouble ticket not found")
+		return
+	}
+	if string(ticket.Status) == "closed" {
+		utils.BadRequest(c, "Cannot delete progress of a closed ticket")
+		return
+	}
+
+	pool := database.GetDB()
+	result, err := pool.Exec(ctx,
+		"DELETE FROM trouble_ticket_progress WHERE id=$1 AND ticket_number=$2",
+		int32(progressID), ticketNumber,
+	)
+	if err != nil {
+		utils.HandleError(c, err, "Failed to delete progress", h.logger)
+		return
+	}
+	if result.RowsAffected() == 0 {
+		utils.NotFound(c, "Progress entry not found")
+		return
+	}
+
+	utils.Success(c, "Progress deleted successfully", nil)
+}
+
+// CloseTicket handles PUT /api/v1/trouble-ticket/close/:ticketNumber
 func (h *TroubleTicketHandler) CloseTicket(c *gin.Context) {
 	ctx := c.Request.Context()
 	ticketNumber := c.Param("ticketNumber")
@@ -552,7 +678,6 @@ func (h *TroubleTicketHandler) CloseTicket(c *gin.Context) {
 		return
 	}
 
-	// Validate ticket status - cannot close if already closed
 	if string(ticket.Status) == "closed" {
 		utils.BadRequest(c, "Ticket is already closed")
 		return
@@ -597,7 +722,6 @@ func (h *TroubleTicketHandler) CloseTicket(c *gin.Context) {
 		h.logger.Warn("Failed to record closing progress", zap.Error(err))
 	}
 
-	// Convert database response to snake_case format
 	slaAvgPtr := numericToFloat64(closedTicket.SlaAvg)
 	ticketResp := ticketResponse{
 		TicketNumber: closedTicket.TicketNumber,
@@ -644,13 +768,11 @@ func (h *TroubleTicketHandler) UpdateTicket(c *gin.Context) {
 		return
 	}
 
-	// Validate that the site exists in sites-services
 	if _, siteErr := services.GetSiteByID(req.SiteID); siteErr != nil {
 		utils.BadRequest(c, fmt.Sprintf("Site not found: %s", req.SiteID))
 		return
 	}
 
-	// Re-fetch SLA for the (possibly new) site
 	startDate := utils.FirstDayOfMonth().Format("2006-01-02")
 	endDate := utils.LastDayOfMonth().Format("2006-01-02")
 	slaAvg, _, slaErr := services.GetSlaForSite(req.SiteID, startDate, endDate)
@@ -659,7 +781,6 @@ func (h *TroubleTicketHandler) UpdateTicket(c *gin.Context) {
 		slaAvg = 0
 	}
 
-	// Update the trouble_ticket row
 	pool := database.GetDB()
 	_, err = pool.Exec(ctx,
 		"UPDATE trouble_ticket SET ticket_type_id=$1, date_down=$2, site_id=$3, pic_id=$4, plan_cm=$5, action=$6, sla_avg=$7 WHERE ticket_number=$8",
@@ -670,7 +791,6 @@ func (h *TroubleTicketHandler) UpdateTicket(c *gin.Context) {
 		return
 	}
 
-	// Replace problem associations
 	if err := h.queries.DeleteTroubleTicketProblems(ctx, ticketNumber); err != nil {
 		h.logger.Warn("Failed to clear old problems on update", zap.Error(err))
 	}
@@ -767,4 +887,220 @@ func (h *TroubleTicketHandler) Refresh(c *gin.Context) {
 		"total":   len(tickets),
 		"updated": updated,
 	})
+}
+
+// progressExportRow used internally for export
+type progressExportRow struct {
+	Date   string
+	Action string
+}
+
+// ExportExcel handles GET /api/v1/trouble-ticket/export
+// Generates an Excel file with 2 sheets: "In Progress" and "Closed"
+func (h *TroubleTicketHandler) ExportExcel(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	statusFilter := c.Query("status")
+	ticketTypeFilter, _ := strconv.ParseInt(c.Query("ticketType"), 10, 32)
+	siteIDFilter := c.Query("siteId")
+	siteNameFilter := c.Query("siteName")
+	provinceFilter := c.Query("province")
+
+	siteIDsFromName := h.buildSiteIDsFromFilters(siteNameFilter, provinceFilter)
+
+	// Fetch ALL tickets (no pagination)
+	tickets, err := h.queries.ListTroubleTickets(ctx, sqlcdb.ListTroubleTicketsParams{
+		Column1: statusFilter,
+		Column2: int32(ticketTypeFilter),
+		Column3: siteIDFilter,
+		Limit:   10000,
+		Offset:  0,
+		Column6: siteIDsFromName,
+	})
+	if err != nil {
+		utils.HandleError(c, err, "Failed to get trouble tickets for export", h.logger)
+		return
+	}
+
+	if len(tickets) == 0 {
+		utils.Success(c, "No tickets to export", nil)
+		return
+	}
+
+	// Collect ticket numbers and site IDs
+	ticketNumbers := make([]string, len(tickets))
+	siteIDs := make([]string, 0, len(tickets))
+	siteIDSet := make(map[string]bool)
+	for i, t := range tickets {
+		ticketNumbers[i] = t.TicketNumber
+		if !siteIDSet[t.SiteID] {
+			siteIDs = append(siteIDs, t.SiteID)
+			siteIDSet[t.SiteID] = true
+		}
+	}
+
+	// Batch fetch problems
+	problemRows, _ := h.queries.GetTroubleTicketProblemsByTicketNumbers(ctx, ticketNumbers)
+	problemMap := make(map[string][]string)
+	for _, p := range problemRows {
+		problemMap[p.TicketNumber] = append(problemMap[p.TicketNumber], p.ProblemName)
+	}
+
+	// Batch fetch progress
+	pool := database.GetDB()
+	rows, err := pool.Query(ctx,
+		"SELECT id, ticket_number, date, action FROM trouble_ticket_progress WHERE ticket_number = ANY($1) ORDER BY ticket_number, date ASC, created_at ASC",
+		ticketNumbers,
+	)
+	progressMap := make(map[string][]progressExportRow)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var id int32
+			var tn, action string
+			var date pgtype.Date
+			if scanErr := rows.Scan(&id, &tn, &date, &action); scanErr == nil {
+				progressMap[tn] = append(progressMap[tn], progressExportRow{
+					Date:   date.Time.Format("2006-01-02"),
+					Action: action,
+				})
+			}
+		}
+	}
+
+	// Fetch site data and SLA
+	startDate := utils.FirstDayOfMonth().Format("2006-01-02")
+	endDate := utils.LastDayOfMonth().Format("2006-01-02")
+	siteMap, _ := services.BuildSiteMap(siteIDs)
+	slaMap := services.BuildSlaMap(siteIDs, startDate, endDate)
+
+	// Separate tickets by status
+	var inProgressTickets []sqlcdb.ListTroubleTicketsRow
+	var closedTickets []sqlcdb.ListTroubleTicketsRow
+	for _, t := range tickets {
+		if string(t.Status) == "closed" {
+			closedTickets = append(closedTickets, t)
+		} else {
+			inProgressTickets = append(inProgressTickets, t)
+		}
+	}
+
+	// Create Excel file
+	f := excelize.NewFile()
+	defer f.Close()
+
+	headers := []string{
+		"No", "Tanggal Down", "Durasi Down", "SLA Avg",
+		"Site Name", "Provinsi", "Baterai Type",
+		"Problem", "PIC", "Action", "Plan CM", "History Progress",
+	}
+
+	writeSheet := func(sheetName string, ticketRows []sqlcdb.ListTroubleTicketsRow) {
+		f.NewSheet(sheetName)
+
+		// Header style
+		headerStyle, _ := f.NewStyle(&excelize.Style{
+			Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+			Fill:      excelize.Fill{Type: "pattern", Color: []string{"2F75B6"}, Pattern: 1},
+			Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			Border: []excelize.Border{
+				{Type: "left", Color: "000000", Style: 1},
+				{Type: "right", Color: "000000", Style: 1},
+				{Type: "top", Color: "000000", Style: 1},
+				{Type: "bottom", Color: "000000", Style: 1},
+			},
+		})
+		wrapStyle, _ := f.NewStyle(&excelize.Style{
+			Alignment: &excelize.Alignment{Vertical: "top", WrapText: true},
+		})
+
+		// Write headers
+		for col, h := range headers {
+			cellName, _ := excelize.CoordinatesToCellName(col+1, 1)
+			f.SetCellValue(sheetName, cellName, h)
+			f.SetCellStyle(sheetName, cellName, cellName, headerStyle)
+		}
+		f.SetRowHeight(sheetName, 1, 30)
+
+		// Column widths
+		colWidths := []float64{5, 14, 12, 10, 25, 20, 14, 25, 15, 35, 25, 50}
+		for col, w := range colWidths {
+			colLetter, _ := excelize.ColumnNumberToName(col + 1)
+			f.SetColWidth(sheetName, colLetter, colLetter, w)
+		}
+
+		// Write data
+		for rowIdx, t := range ticketRows {
+			rowNum := rowIdx + 2
+			site := siteMap[t.SiteID]
+
+			var slaStr string
+			if sla, ok := slaMap[t.SiteID]; ok {
+				slaStr = fmt.Sprintf("%.2f%%", sla.Average)
+			} else {
+				slaStr = "-"
+			}
+
+			problems := strings.Join(problemMap[t.TicketNumber], ", ")
+			if problems == "" {
+				problems = "-"
+			}
+
+			durationDays := int(time.Since(t.DateDown.Time).Hours() / 24)
+			duration := fmt.Sprintf("%d hari", durationDays)
+
+			// Format history progress
+			var progressLines []string
+			for _, p := range progressMap[t.TicketNumber] {
+				progressLines = append(progressLines, fmt.Sprintf("%s: %s", p.Date, p.Action))
+			}
+			historyProgress := strings.Join(progressLines, "\n")
+			if historyProgress == "" {
+				historyProgress = "-"
+			}
+
+			values := []interface{}{
+				rowIdx + 1,
+				t.DateDown.Time.Format("2006-01-02"),
+				duration,
+				slaStr,
+				site.SiteName,
+				site.Province,
+				site.BatteryVersion,
+				problems,
+				t.PicName,
+				t.Action,
+				t.PlanCm,
+				historyProgress,
+			}
+
+			for col, v := range values {
+				cellName, _ := excelize.CoordinatesToCellName(col+1, rowNum)
+				f.SetCellValue(sheetName, cellName, v)
+				f.SetCellStyle(sheetName, cellName, cellName, wrapStyle)
+			}
+
+			// Estimate row height based on progress lines
+			lines := len(progressLines)
+			if lines < 1 {
+				lines = 1
+			}
+			f.SetRowHeight(sheetName, rowNum, float64(lines)*18)
+		}
+	}
+
+	writeSheet("In Progress", inProgressTickets)
+	writeSheet("Closed", closedTickets)
+
+	// Remove default "Sheet1"
+	f.DeleteSheet("Sheet1")
+
+	// Write to response
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", `attachment; filename="trouble-ticket-report.xlsx"`)
+	c.Header("Cache-Control", "no-cache")
+
+	if err := f.Write(c.Writer); err != nil {
+		h.logger.Error("Failed to write Excel file", zap.Error(err))
+	}
 }

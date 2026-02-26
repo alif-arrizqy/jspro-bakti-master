@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 	"trouble-ticket-services/internal/cache"
 	"trouble-ticket-services/internal/config"
@@ -88,9 +90,14 @@ type slaCacheEntry struct {
 	Unit    string  `json:"unit"`
 }
 
+type siteSearchDetailItem struct {
+	Province string `json:"province"`
+}
+
 type siteSearchResponseItem struct {
-	SiteID   string `json:"siteId"`
-	SiteName string `json:"siteName"`
+	SiteID   string               `json:"siteId"`
+	SiteName string               `json:"siteName"`
+	Detail   siteSearchDetailItem `json:"detail"`
 }
 
 type siteSearchResponsePayload struct {
@@ -161,9 +168,12 @@ func SearchSites(query string) ([]string, error) {
 		return []string{}, nil
 	}
 
-	url := fmt.Sprintf("%s/api/v1/sites?search=%s&limit=100", config.App.External.SitesServiceURL, query)
+	params := url.Values{}
+	params.Set("search", query)
+	params.Set("limit", "100")
+	apiURL := fmt.Sprintf("%s/api/v1/sites?%s", config.App.External.SitesServiceURL, params.Encode())
 
-	resp, err := httpClient.Get(url)
+	resp, err := httpClient.Get(apiURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call sites-services for search: %w", err)
 	}
@@ -186,6 +196,54 @@ func SearchSites(query string) ([]string, error) {
 	siteIDs := make([]string, len(result.Data.Data))
 	for i, s := range result.Data.Data {
 		siteIDs[i] = s.SiteID
+	}
+
+	return siteIDs, nil
+}
+
+// SearchSitesByProvince searches for site IDs belonging to a given province.
+// Endpoint: GET /api/v1/sites?province={province}&limit=500
+func SearchSitesByProvince(province string) ([]string, error) {
+	if province == "" {
+		return []string{}, nil
+	}
+
+	params := url.Values{}
+	params.Set("province", province)
+	params.Set("limit", "100")
+	apiURL := fmt.Sprintf("%s/api/v1/sites?%s", config.App.External.SitesServiceURL, params.Encode())
+
+	resp, err := httpClient.Get(apiURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call sites-services for province search: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read sites-services province response: %w", err)
+	}
+
+	var result siteSearchResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse sites-services province response: %w", err)
+	}
+
+	if !result.Success {
+		return nil, fmt.Errorf("sites-services province search returned success=false")
+	}
+
+	// Exact-match filter: sites-service may return over-broad results
+	// (e.g. "maluku" region key returns MALUKU+MALUKU UTARA, or "contains"
+	// match for "PAPUA BARAT" also hits "PAPUA BARAT DAYA").
+	// Compare against the normalised uppercase province name to ensure
+	// only the requested province is included.
+	wantProvince := strings.ToUpper(strings.TrimSpace(province))
+	siteIDs := make([]string, 0, len(result.Data.Data))
+	for _, s := range result.Data.Data {
+		if strings.ToUpper(strings.TrimSpace(s.Detail.Province)) == wantProvince {
+			siteIDs = append(siteIDs, s.SiteID)
+		}
 	}
 
 	return siteIDs, nil

@@ -64,8 +64,11 @@ func SetupRoutes(r *gin.Engine) {
 		tt.GET("", ttHandler.GetAll)
 		// Static paths must be registered before wildcard /:ticketNumber
 		tt.GET("/refresh", ttHandler.Refresh)
+		tt.GET("/export", ttHandler.ExportExcel)
 		tt.GET("/progress/:ticketNumber", ttHandler.GetProgress)
 		tt.PUT("/progress/:ticketNumber", ttHandler.AddProgress)
+		tt.PUT("/progress/:ticketNumber/:progressId", ttHandler.UpdateProgress)
+		tt.DELETE("/progress/:ticketNumber/:progressId", ttHandler.DeleteProgress)
 		tt.PUT("/close/:ticketNumber", ttHandler.CloseTicket)
 		tt.PUT("/:ticketNumber", ttHandler.UpdateTicket)
 		tt.DELETE("/:ticketNumber", ttHandler.DeleteTicket)
