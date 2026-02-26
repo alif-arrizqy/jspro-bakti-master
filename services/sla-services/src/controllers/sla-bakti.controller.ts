@@ -616,6 +616,72 @@ export class SlaBaktiController {
     }
 
     /**
+     * Get daily SLA chart for terestrial/MQTT sites
+     */
+    static async getDailyChartTerrestrial(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const query = request.query as { startDate: string; endDate: string };
+
+            if (!query.startDate || !query.endDate) {
+                return reply.status(400).send({
+                    success: false,
+                    error: "startDate and endDate are required",
+                });
+            }
+
+            const result = await slaBaktiService.getDailyChartTerrestrial({
+                startDate: query.startDate,
+                endDate: query.endDate,
+            });
+
+            return reply.send({
+                success: true,
+                ...result,
+            });
+        } catch (error) {
+            slaLogger.error({ error }, "Error getting daily chart terrestrial");
+            return reply.status(500).send({
+                success: false,
+                error: error instanceof Error ? error.message : "Failed to get chart data",
+            });
+        }
+    }
+
+    /**
+     * Get monthly summary for terestrial/MQTT sites
+     */
+    static async getMonthlySummaryTerrestrial(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const query = request.query as { period: string };
+
+            if (!query.period) {
+                return reply.status(400).send({
+                    success: false,
+                    error: "period is required. Format: 'YYYY-MM' or 'month year' in Indonesian",
+                });
+            }
+
+            const { year, month } = SlaBaktiController.parseMonthYear(query.period);
+            const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+            const lastDay = SlaBaktiController.getLastDayOfMonth(year, month);
+            const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+            const result = await slaBaktiService.getMonthlySummaryTerrestrial({ startDate, endDate });
+
+            return reply.send({
+                success: true,
+                data: result,
+            });
+        } catch (error) {
+            slaLogger.error({ error }, "Error getting monthly summary terrestrial");
+            return reply.status(400).send({
+                success: false,
+                error: error instanceof Error ? error.message : "Failed to get monthly summary terrestrial",
+            });
+        }
+    }
+
+    /**
      * Get master SLA data
      */
     static async getMaster(request: FastifyRequest, reply: FastifyReply) {

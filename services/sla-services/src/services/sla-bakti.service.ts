@@ -152,16 +152,32 @@ export class SlaBaktiService {
             );
         }
 
-        // Prepare validDataForSave
-        const validDataForSave: SlaBaktiTypes.SlaBaktiInput[] = validData.map((row) => ({
-            date: new Date(row.date),
-            siteId: row.siteId,
-            prCode: row.prCode,
-            sla: row.sla,
-            powerUptime: row.powerUptime,
-            powerDowntime: row.powerDowntime,
-            statusSla: row.statusSla,
-        }));
+        // Fetch site details to determine statusSites per site (terestrial vs non_terestrial)
+        let siteDetailsMap: Map<string, import("../types/sites.types").SiteDetailInfo>;
+        try {
+            siteDetailsMap = await sitesService.getSiteDetailsCached();
+        } catch (error) {
+            slaLogger.warn({ error }, "Failed to fetch site details for statusSites, defaulting all to non_terestrial");
+            siteDetailsMap = new Map();
+        }
+
+        // Prepare validDataForSave — choose SLA column based on statusSites:
+        // terestrial  → powerUptimeMqtt (Power Uptime MQTT %)
+        // non_terestrial → powerUptime  (Power Uptime %)
+        const validDataForSave: SlaBaktiTypes.SlaBaktiInput[] = validData.map((row) => {
+            const siteDetail = siteDetailsMap.get(row.siteId);
+            const statusSites = siteDetail?.statusSites ?? 'non_terestrial';
+            const sla = statusSites === 'terestrial' ? (row.powerUptimeMqtt ?? row.powerUptime) : row.powerUptime;
+            return {
+                date: new Date(row.date),
+                siteId: row.siteId,
+                prCode: row.prCode,
+                sla,
+                powerUptime: row.powerUptime,
+                powerDowntime: row.powerDowntime,
+                statusSla: row.statusSla,
+            };
+        });
 
         return {
             preview: {
@@ -2305,6 +2321,135 @@ export class SlaBaktiService {
                         total,
                         totalPages: Math.ceil(total / limit),
                     },
+                };
+            },
+            ttl
+        );
+    }
+
+    /**
+     * Helper: get array of terestrial site IDs from sites service (cached)
+     */
+    private async getTerrestrialSiteIds(): Promise<string[]> {
+        const siteDetailsMap = await sitesService.getSiteDetailsCached();
+        return Array.from(siteDetailsMap.entries())
+            .filter(([, details]) => details.statusSites === 'terestrial')
+            .map(([siteId]) => siteId);
+    }
+
+    /**
+     * Get daily SLA chart data for terestrial/MQTT sites only
+     */
+    async getDailyChartTerrestrial(params: SlaBaktiTypes.SlaChartDailyParams): Promise<SlaBaktiTypes.SlaChartDailyResponse> {
+        const cacheKey = `daily-chart-terrestrial:${params.startDate}:${params.endDate}`;
+        const ttl = CacheService.calculateTTL(params.startDate, params.endDate);
+
+        return cacheService.get(
+            cacheKey,
+            async () => {
+                const prisma = databaseService.getSlaClient();
+
+                const terrestrialSiteIds = await this.getTerrestrialSiteIds();
+
+                if (terrestrialSiteIds.length === 0) {
+                    slaLogger.warn("No terestrial site IDs found for daily chart terrestrial");
+                    return { data: [] };
+                }
+
+                const startDate = new Date(params.startDate);
+                const endDate = new Date(params.endDate);
+
+                const data = await prisma.slaBakti.findMany({
+                    where: {
+                        date: { gte: startDate, lte: endDate },
+                        siteId: { in: terrestrialSiteIds },
+                    },
+                    select: { date: true, sla: true },
+                    orderBy: { date: "asc" },
+                });
+
+                const dailyMap = new Map<string, { total: number; count: number }>();
+                for (const record of data) {
+                    if (record.sla !== null) {
+                        const dateStr = dayjs(record.date).format("YYYY-MM-DD");
+                        const existing = dailyMap.get(dateStr) || { total: 0, count: 0 };
+                        dailyMap.set(dateStr, {
+                            total: existing.total + record.sla,
+                            count: existing.count + 1,
+                        });
+                    }
+                }
+
+                const result = Array.from(dailyMap.entries())
+                    .map(([date, { total, count }]) => ({
+                        date,
+                        // Konsisten dengan getDailyChart & getDailyChartByBatteryVersion
+                        value: count > 0 ? Number(Math.round(total / count)) : 0,
+                    }))
+                    .sort((a, b) => a.date.localeCompare(b.date));
+
+                return { data: result };
+            },
+            ttl
+        );
+    }
+
+    /**
+     * Get monthly summary for terestrial/MQTT sites only
+     * Returns totalSites and avgSla (same structure per battery-version summary)
+     */
+    async getMonthlySummaryTerrestrial(params: SlaBaktiTypes.SlaDetailMonthlyParams): Promise<{
+        totalSites: number;
+        avgSla: number;
+        slaUnit: string;
+        slaStatus: "Meet SLA" | "Very Bad" | "Bad" | "Fair" | "Poor";
+    }> {
+        const cacheKey = `monthly-summary-terrestrial:${params.startDate}:${params.endDate}`;
+        const ttl = CacheService.calculateMonthlyTTL(params.startDate);
+
+        return cacheService.get(
+            cacheKey,
+            async () => {
+                const prisma = databaseService.getSlaClient();
+
+                const terrestrialSiteIds = await this.getTerrestrialSiteIds();
+
+                if (terrestrialSiteIds.length === 0) {
+                    slaLogger.warn("No terestrial site IDs found for monthly summary terrestrial");
+                    return { totalSites: 0, avgSla: 0, slaUnit: "%", slaStatus: "Very Bad" as const };
+                }
+
+                const startDate = new Date(params.startDate);
+                const endDate = new Date(params.endDate);
+
+                const allSlaData = await prisma.slaBakti.findMany({
+                    where: {
+                        date: { gte: startDate, lte: endDate },
+                        siteId: { in: terrestrialSiteIds },
+                    },
+                    select: { date: true, siteId: true, sla: true },
+                });
+
+                // Count unique sites from the latest date available
+                const dates = Array.from(new Set(allSlaData.map((d) => dayjs(d.date).format("YYYY-MM-DD")))).sort(
+                    (a, b) => b.localeCompare(a)
+                );
+                const latestDate = dates[0];
+                const latestData = latestDate
+                    ? allSlaData.filter((d) => dayjs(d.date).format("YYYY-MM-DD") === latestDate)
+                    : [];
+                const totalSites = new Set(latestData.map((d) => d.siteId)).size;
+
+                // Calculate average SLA across the full date range
+                const validSla = allSlaData.filter((d) => d.sla !== null && d.sla !== undefined);
+                const avgSla =
+                    validSla.length > 0 ? validSla.reduce((sum, d) => sum + (d.sla || 0), 0) / validSla.length : 0;
+
+                return {
+                    totalSites,
+                    avgSla: Number(avgSla.toFixed(2)),
+                    slaUnit: "%",
+                    slaStatus: this.calculateSlaStatus(avgSla),
                 };
             },
             ttl

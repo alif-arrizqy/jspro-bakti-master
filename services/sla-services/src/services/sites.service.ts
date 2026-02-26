@@ -449,9 +449,10 @@ export class SitesService {
                         siteDetailsMap.set(site.siteId, {
                             siteId: site.siteId,
                             siteName: this.formatSiteName(site.siteName),
-                            province: site.detail.province || null,
+                            province: site.detail?.province || null,
                             batteryVersion: site.batteryVersion || null,
-                            talisInstalled: site.detail.talisInstalled || null,
+                            talisInstalled: site.detail?.talisInstalled || null,
+                            statusSites: site.statusSites === 'terestrial' ? 'terestrial' : 'non_terestrial',
                         });
                     }
                 }

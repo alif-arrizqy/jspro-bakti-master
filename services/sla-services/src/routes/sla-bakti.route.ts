@@ -403,6 +403,78 @@ export async function slaBaktiRoutes(fastify: FastifyInstance) {
     );
 
     // --------------------------------------------------------
+    // GET /api/sla-bakti/daily/chart/terrestrial - Get daily SLA chart for terestrial/MQTT sites
+    // --------------------------------------------------------
+    fastify.get(
+        "/daily/chart/terrestrial",
+        {
+            schema: {
+                tags: ["SLA Bakti - Daily"],
+                summary: "Get daily SLA MQTT chart data (terestrial sites)",
+                description: "Get daily average SLA data for terestrial (MQTT) sites only",
+                querystring: {
+                    type: "object",
+                    required: ["startDate", "endDate"],
+                    properties: {
+                        startDate: { type: "string", description: "Start date (YYYY-MM-DD)" },
+                        endDate: { type: "string", description: "End date (YYYY-MM-DD)" },
+                    },
+                },
+                response: {
+                    200: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean" },
+                            data: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        date: { type: "string" },
+                                        value: { type: "number" },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        SlaBaktiController.getDailyChartTerrestrial
+    );
+
+    // --------------------------------------------------------
+    // GET /api/sla-bakti/monthly/summary/terrestrial - Get monthly summary for terestrial/MQTT sites
+    // --------------------------------------------------------
+    fastify.get(
+        "/monthly/summary/terrestrial",
+        {
+            schema: {
+                tags: ["SLA Bakti - Monthly"],
+                summary: "Get monthly summary for terestrial/MQTT sites",
+                description: "Get monthly summary (total sites, avg SLA MQTT) for terestrial sites. Period format: 'YYYY-MM' or 'month year' in Indonesian.",
+                querystring: {
+                    type: "object",
+                    required: ["period"],
+                    properties: {
+                        period: { type: "string", description: "Month and year (e.g., '2026-02' or 'februari 2026')" },
+                    },
+                },
+                response: {
+                    200: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean" },
+                            data: { type: "object", additionalProperties: true },
+                        },
+                    },
+                },
+            },
+        },
+        SlaBaktiController.getMonthlySummaryTerrestrial
+    );
+
+    // --------------------------------------------------------
     // GET /api/sla-bakti/daily/chart/battery/:batteryVersion - Get daily SLA chart by battery version
     // Parameterized route must be defined after all static routes
     // --------------------------------------------------------
