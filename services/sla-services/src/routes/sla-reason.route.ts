@@ -211,12 +211,27 @@ export async function slaReasonRoutes(fastify: FastifyInstance) {
                         type: "object",
                         properties: {
                             success: { type: "boolean" },
+                            message: { type: "string" },
                             data: {
                                 type: "object",
                                 properties: {
                                     deleted: { type: "integer" },
                                 },
                             },
+                        },
+                    },
+                    404: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean" },
+                            error: { type: "string" },
+                        },
+                    },
+                    500: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean" },
+                            error: { type: "string" },
                         },
                     },
                 },
@@ -284,11 +299,11 @@ export async function slaReasonRoutes(fastify: FastifyInstance) {
             schema: {
                 tags: ["SLA Reason"],
                 summary: "Remove reason from battery version",
-                description: "Remove association between SLA reason and battery version",
+                description: "Remove association between SLA reason and battery version. Use batteryVersionId from GET /battery-version/:batteryVersion response.",
                 params: {
                     type: "object",
                     properties: {
-                        id: { type: "integer" },
+                        id: { type: "integer", description: "BatteryVersionReason.id (the batteryVersionId field from GET /battery-version/:batteryVersion)" },
                     },
                 },
                 response: {
@@ -296,12 +311,27 @@ export async function slaReasonRoutes(fastify: FastifyInstance) {
                         type: "object",
                         properties: {
                             success: { type: "boolean" },
+                            message: { type: "string" },
                             data: {
                                 type: "object",
                                 properties: {
                                     deleted: { type: "integer" },
                                 },
                             },
+                        },
+                    },
+                    404: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean" },
+                            error: { type: "string" },
+                        },
+                    },
+                    500: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean" },
+                            error: { type: "string" },
                         },
                     },
                 },
@@ -344,7 +374,8 @@ export async function slaReasonRoutes(fastify: FastifyInstance) {
                                 items: {
                                     type: "object",
                                     properties: {
-                                        id: { type: "integer" },
+                                        id: { type: "integer", description: "SlaReason.id (for display)" },
+                                        batteryVersionId: { type: "integer", description: "BatteryVersionReason.id — use this ID for DELETE /battery-version/:id" },
                                         reason: { type: "string" },
                                         createdAt: { type: "string" },
                                         updatedAt: { type: "string" },

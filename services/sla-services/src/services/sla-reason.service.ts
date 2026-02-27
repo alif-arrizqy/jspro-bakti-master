@@ -7,6 +7,7 @@ import type {
     SlaReasonQueryParams,
     BatteryVersionReasonInput,
     BatteryVersionReasonResponse,
+    BatteryVersionReasonDetailResponse,
 } from "../types/sla-reason.types";
 
 export class SlaReasonService {
@@ -155,18 +156,21 @@ export class SlaReasonService {
 
     /**
      * Get reasons by battery version
+     * Returns BatteryVersionReasonDetailResponse[] which includes:
+     * - id: SlaReason.id (for display purposes)
+     * - batteryVersionId: BatteryVersionReason.id (use this for deletion via DELETE /battery-version/:id)
      */
     async getReasonsByBatteryVersion(
         batteryVersion: string,
         params?: { startDate?: string; endDate?: string; period?: string }
-    ): Promise<SlaReasonResponse[]> {
+    ): Promise<BatteryVersionReasonDetailResponse[]> {
         const prisma = databaseService.getSlaClient();
-        
+
         // Build where clause
         const where: any = {
             batteryVersion,
         };
-        
+
         // If period is provided, filter by period (more efficient than date range)
         if (params?.period) {
             where.period = params.period;
@@ -189,7 +193,7 @@ export class SlaReasonService {
                 where.period = dayjs().format("YYYY-MM");
             }
         }
-        
+
         const results = await prisma.batteryVersionReason.findMany({
             where,
             include: {
@@ -201,7 +205,15 @@ export class SlaReasonService {
                 },
             },
         });
-        return results.map((r) => this.formatResponse(r.reason));
+
+        // Return both SlaReason.id (for display) and BatteryVersionReason.id (for deletion)
+        return results.map((r) => ({
+            id: r.reason.id,
+            batteryVersionId: r.id,
+            reason: r.reason.reason,
+            createdAt: dayjs(r.reason.createdAt).toISOString(),
+            updatedAt: dayjs(r.reason.updatedAt).toISOString(),
+        }));
     }
 
     /**

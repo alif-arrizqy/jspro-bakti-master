@@ -142,6 +142,12 @@ export class SlaReasonController {
                 data: result,
             });
         } catch (error: any) {
+            if (error.code === "P2025") {
+                return reply.status(404).send({
+                    success: false,
+                    error: "SLA Reason not found",
+                });
+            }
             if (error.code === "P2002") {
                 return reply.status(400).send({
                     success: false,
@@ -172,9 +178,16 @@ export class SlaReasonController {
             const result = await slaReasonService.delete(id);
             return reply.send({
                 success: true,
+                message: "SLA Reason deleted successfully",
                 data: result,
             });
-        } catch (error) {
+        } catch (error: any) {
+            if (error.code === "P2025") {
+                return reply.status(404).send({
+                    success: false,
+                    error: "SLA Reason not found",
+                });
+            }
             slaLogger.error({ error }, "Error deleting SLA Reason");
             return reply.status(500).send({
                 success: false,
@@ -240,9 +253,16 @@ export class SlaReasonController {
             const result = await slaReasonService.removeBatteryVersionReason(id);
             return reply.send({
                 success: true,
+                message: "Battery version reason removed successfully",
                 data: result,
             });
-        } catch (error) {
+        } catch (error: any) {
+            if (error.code === "P2025") {
+                return reply.status(404).send({
+                    success: false,
+                    error: "Battery version reason not found",
+                });
+            }
             slaLogger.error({ error }, "Error removing battery version reason");
             return reply.status(500).send({
                 success: false,
