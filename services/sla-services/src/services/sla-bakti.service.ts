@@ -2341,7 +2341,7 @@ export class SlaBaktiService {
      * Get daily SLA chart data for terestrial/MQTT sites only
      */
     async getDailyChartTerrestrial(params: SlaBaktiTypes.SlaChartDailyParams): Promise<SlaBaktiTypes.SlaChartDailyResponse> {
-        const cacheKey = `daily-chart-terrestrial:${params.startDate}:${params.endDate}`;
+        const cacheKey = CacheService.getDailyChartTerrestrialKey(params.startDate, params.endDate);
         const ttl = CacheService.calculateTTL(params.startDate, params.endDate);
 
         return cacheService.get(
@@ -2404,7 +2404,7 @@ export class SlaBaktiService {
         slaUnit: string;
         slaStatus: "Meet SLA" | "Very Bad" | "Bad" | "Fair" | "Poor";
     }> {
-        const cacheKey = `monthly-summary-terrestrial:${params.startDate}:${params.endDate}`;
+        const cacheKey = CacheService.getMonthlySummaryTerrestrialKey(params.startDate, params.endDate);
         const ttl = CacheService.calculateMonthlyTTL(params.startDate);
 
         return cacheService.get(

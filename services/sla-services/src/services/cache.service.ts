@@ -206,6 +206,7 @@ export class CacheService {
         // Patterns to scan for different cache types
         const cachePrefixes = [
             "sla:chart:daily",
+            "sla:chart:daily:terrestrial",
             "sla:chart:weekly",
             "sla:chart:battery",
             "sla:detail:daily",
@@ -257,6 +258,7 @@ export class CacheService {
             for (const date of dates) {
                 const yearMonth = dayjs(date).format("YYYY-MM");
                 patterns.push(`sla:monthly:summary:${yearMonth}-01:*`);
+                patterns.push(`sla:monthly:summary:terrestrial:${yearMonth}-01:*`);
             }
 
             // Also add pattern-based invalidation for keys we might have missed
@@ -265,22 +267,26 @@ export class CacheService {
                 // Pattern for keys ending with the date
                 patterns.push(`sla:chart:daily:*:${date}`);
                 patterns.push(`sla:chart:daily:*:${date}:*`);
+                patterns.push(`sla:chart:daily:terrestrial:*:${date}`);
                 patterns.push(`sla:chart:weekly:*:${date}`);
                 patterns.push(`sla:chart:battery:*:*:${date}`);
                 patterns.push(`sla:detail:daily:*:${date}`);
                 patterns.push(`sla:master:*:${date}:*`);
-                
+
                 // Pattern for keys starting with the date
                 patterns.push(`sla:chart:daily:${date}:*`);
+                patterns.push(`sla:chart:daily:terrestrial:${date}:*`);
                 patterns.push(`sla:chart:weekly:${date}:*`);
                 patterns.push(`sla:detail:daily:${date}:*`);
             }
 
             // Add exact range patterns
             patterns.push(`sla:chart:daily:${startDate}:${endDate}`);
+            patterns.push(`sla:chart:daily:terrestrial:${startDate}:${endDate}`);
             patterns.push(`sla:chart:weekly:${startDate}:${endDate}`);
             patterns.push(`sla:detail:daily:${startDate}:${endDate}`);
             patterns.push(`sla:master:${startDate}:${endDate}:*`);
+            patterns.push(`sla:monthly:summary:terrestrial:${startDate}:${endDate}`);
 
             // Delete keys that overlap
             if (keysToDelete.length > 0) {
@@ -356,6 +362,20 @@ export class CacheService {
      */
     static getMonthlySummaryKey(startDate: string, endDate: string): string {
         return `sla:monthly:summary:${startDate}:${endDate}`;
+    }
+
+    /**
+     * Generate cache key for daily chart (terrestrial/MQTT sites)
+     */
+    static getDailyChartTerrestrialKey(startDate: string, endDate: string): string {
+        return `sla:chart:daily:terrestrial:${startDate}:${endDate}`;
+    }
+
+    /**
+     * Generate cache key for monthly summary (terrestrial/MQTT sites)
+     */
+    static getMonthlySummaryTerrestrialKey(startDate: string, endDate: string): string {
+        return `sla:monthly:summary:terrestrial:${startDate}:${endDate}`;
     }
 
     /**
