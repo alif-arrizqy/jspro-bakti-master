@@ -264,6 +264,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 	siteIDFilter := c.Query("siteId")
 	siteNameFilter := c.Query("siteName")
 	provinceFilter := c.Query("province")
+	picIDFilter, _ := strconv.ParseInt(c.Query("picId"), 10, 32)
 
 	limitParam, _ := strconv.ParseInt(c.Query("limit"), 10, 32)
 	pageParam, _ := strconv.ParseInt(c.Query("page"), 10, 32)
@@ -295,6 +296,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		Column2: int32(ticketTypeFilter),
 		Column3: siteIDFilter,
 		Column4: siteIDsFromName,
+		Column5: int32(picIDFilter),
 	})
 	if err != nil {
 		h.logger.Warn("Failed to count trouble tickets", zap.Error(err))
@@ -318,6 +320,7 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		Limit:   int32(limitParam),
 		Offset:  int32(offset),
 		Column6: siteIDsFromName,
+		Column7: int32(picIDFilter),
 	})
 	if err != nil {
 		utils.HandleError(c, err, "Failed to get trouble tickets", h.logger)
