@@ -69,6 +69,7 @@ func SetupRoutes(r *gin.Engine) {
 		tt.PUT("/progress/:ticketNumber", ttHandler.AddProgress)
 		tt.PUT("/progress/:ticketNumber/:progressId", ttHandler.UpdateProgress)
 		tt.DELETE("/progress/:ticketNumber/:progressId", ttHandler.DeleteProgress)
+		tt.PUT("/status/:ticketNumber", ttHandler.UpdateStatus)
 		tt.PUT("/close/:ticketNumber", ttHandler.CloseTicket)
 		tt.PUT("/:ticketNumber", ttHandler.UpdateTicket)
 		tt.DELETE("/:ticketNumber", ttHandler.DeleteTicket)
