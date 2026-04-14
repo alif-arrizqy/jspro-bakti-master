@@ -227,7 +227,9 @@ Base URL: `http://localhost:3006`
 | GET | `/api/v1/trouble-ticket/refresh` | Refresh data SLA dari sla-services |
 | GET | `/api/v1/trouble-ticket/progress/:ticketNumber` | Detail tiket + history progress |
 | PUT | `/api/v1/trouble-ticket/progress/:ticketNumber` | Tambah update progress |
-| PUT | `/api/v1/trouble-ticket/:ticketNumber` | Tutup trouble ticket |
+| PUT | `/api/v1/trouble-ticket/status/:ticketNumber` | Update status manual (`progress`/`pending`/`closed`) |
+| PUT | `/api/v1/trouble-ticket/close/:ticketNumber` | Tutup trouble ticket (legacy endpoint) |
+| PUT | `/api/v1/trouble-ticket/:ticketNumber` | Update data trouble ticket |
 
 ## Format Request & Response
 
@@ -282,6 +284,16 @@ Base URL: `http://localhost:3006`
   "status": "closed",
   "date": "2025-01-20",
   "action": "Modem VSAT berhasil diganti, site sudah kembali normal"
+}
+```
+
+### PUT /api/v1/trouble-ticket/status/:ticketNumber (Manual Status Change)
+
+```json
+{
+  "status": "pending",
+  "date": "2025-01-21",
+  "action": "Koreksi manual status karena human error saat input sebelumnya"
 }
 ```
 
