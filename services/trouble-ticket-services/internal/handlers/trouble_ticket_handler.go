@@ -85,6 +85,15 @@ type progressResponse struct {
 	Action       string `json:"action"`
 }
 
+func isValidTicketStatus(status string) bool {
+	switch status {
+	case "progress", "pending", "closed":
+		return true
+	default:
+		return false
+	}
+}
+
 func (h *TroubleTicketHandler) generateUniqueTicketNumber(ctx context.Context) (string, error) {
 	for i := 0; i < 10; i++ {
 		num := fmt.Sprintf("%06d", rand.Intn(1000000))
@@ -662,6 +671,99 @@ func (h *TroubleTicketHandler) DeleteProgress(c *gin.Context) {
 	}
 
 	utils.Success(c, "Progress deleted successfully", nil)
+}
+
+// UpdateStatus handles PUT /api/v1/trouble-ticket/status/:ticketNumber
+// Allows manual status correction for human-error scenarios (including reopen from closed).
+func (h *TroubleTicketHandler) UpdateStatus(c *gin.Context) {
+	ctx := c.Request.Context()
+	ticketNumber := c.Param("ticketNumber")
+
+	ticket, err := h.queries.GetTroubleTicket(ctx, ticketNumber)
+	if err != nil {
+		utils.NotFound(c, "Trouble ticket not found")
+		return
+	}
+
+	var req struct {
+		Status string `json:"status" binding:"required"`
+		Date   string `json:"date"`
+		Action string `json:"action"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	req.Status = strings.ToLower(strings.TrimSpace(req.Status))
+	if !isValidTicketStatus(req.Status) {
+		utils.BadRequest(c, "Status must be one of: progress, pending, closed")
+		return
+	}
+
+	if req.Status == string(ticket.Status) {
+		utils.BadRequest(c, "Status is already set to the requested value")
+		return
+	}
+
+	hasDate := strings.TrimSpace(req.Date) != ""
+	hasAction := strings.TrimSpace(req.Action) != ""
+	if hasDate != hasAction {
+		utils.BadRequest(c, "date and action must be provided together")
+		return
+	}
+
+	var pgDate pgtype.Date
+	if hasDate && hasAction {
+		date, err := time.Parse("2006-01-02", req.Date)
+		if err != nil {
+			utils.BadRequest(c, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		_ = pgDate.Scan(date)
+	}
+
+	pool := database.GetDB()
+	if _, err := pool.Exec(ctx,
+		"UPDATE trouble_ticket SET status=$1, updated_at=NOW() WHERE ticket_number=$2",
+		req.Status, ticketNumber,
+	); err != nil {
+		utils.HandleError(c, err, "Failed to update trouble ticket status", h.logger)
+		return
+	}
+
+	// Optional progress trail so manual status changes remain auditable in UI/web.
+	if hasDate && hasAction {
+		_, err = h.queries.CreateTroubleTicketProgress(ctx, sqlcdb.CreateTroubleTicketProgressParams{
+			TicketNumber: ticketNumber,
+			Date:         pgDate,
+			Action:       req.Action,
+		})
+		if err != nil {
+			h.logger.Warn("Failed to record manual status change progress", zap.Error(err))
+		}
+	}
+
+	updatedTicket, err := h.queries.GetTroubleTicket(ctx, ticketNumber)
+	if err != nil {
+		utils.HandleError(c, err, "Status updated but failed to fetch updated ticket", h.logger)
+		return
+	}
+
+	slaAvgPtr := numericToFloat64(updatedTicket.SlaAvg)
+	ticketResp := ticketResponse{
+		TicketNumber: updatedTicket.TicketNumber,
+		TicketTypeID: updatedTicket.TicketTypeID,
+		DateDown:     updatedTicket.DateDown.Time.Format("2006-01-02"),
+		SiteID:       updatedTicket.SiteID,
+		SlaAvg:       slaAvgPtr,
+		PicID:        updatedTicket.PicID,
+		PlanCm:       updatedTicket.PlanCm,
+		Action:       updatedTicket.Action,
+		Status:       string(updatedTicket.Status),
+	}
+
+	utils.Success(c, "Trouble ticket status updated successfully", ticketResp)
 }
 
 // CloseTicket handles PUT /api/v1/trouble-ticket/close/:ticketNumber
