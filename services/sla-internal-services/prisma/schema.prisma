@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model NojsUser {
+  id          Int      @id @default(autoincrement())
+  nojs        String?  @db.VarChar(255)
+  site        String?  @db.VarChar(255)
+  provinsi    String?  @db.VarChar(255)
+  lc          String?  @db.VarChar(255)
+  mitra       String?  @db.VarChar(255)
+  ip          String?  @db.VarChar(255)
+  latitude    String?  @db.VarChar(255)
+  longitude   String?  @db.VarChar(255)
+  idLvdVsat   Int?     @map("id_lvd_vsat")
+  idPing      Int?     @map("id_ping")
+  idBattVolt  Int?     @map("id_batt_volt")
+  idVsatCurr  Int?     @map("id_vsat_curr")
+  idBtsCurr   Int?     @map("id_bts_curr")
+  gs          Int?
+  darat       String?  @db.VarChar(255)
+  laut        String?  @db.VarChar(255)
+  udara       String?  @db.VarChar(255)
+  ehubVersion String?  @map("ehub_version") @db.VarChar(255)
+  panel2Type  String?  @map("panel2_type") @db.VarChar(255)
+  kota        String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+
+  loggers NojsLogger[]
+
+  @@map("nojs_users")
+}
+
+model NojsLogger {
+  id         Int      @id @default(autoincrement())
+  ts         String?  @db.VarChar(255)
+  nojsId     Int      @map("nojs_id")
+  battVolt   Float?   @map("batt_volt")
+  cpuTemp    Float?   @map("cpu_temp")
+  dockActive String?  @map("dock_active") @db.VarChar(255)
+  load1      Float?
+  load2      Float?
+  load3      Float?
+  dockCellId Int?     @map("dock_cell_id")
+  energyId   Int?     @map("energy_id")
+  statisticsId Int?   @map("statistics_id")
+  pvId       Int?     @map("pv_id")
+  bspwatt    Int?
+  mcbVoltage Float?   @map("mcb_voltage")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  nojs   NojsUser @relation(fields: [nojsId], references: [id])
+  energy Energy?  @relation(fields: [energyId], references: [id])
+  pv     Pv?      @relation(fields: [pvId], references: [id])
+
+  @@map("nojs_loggers")
+}
+
+model Energy {
+  id        Int      @id @default(autoincrement())
+  edl1      Float?
+  edl2      Float?
+  edl3      Float?
+  eh1       Float?
+  eh2       Float?
+  eh3       Float?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  loggers NojsLogger[]
+
+  @@map("energy")
+}
+
+model Pv {
+  id        Int      @id @default(autoincrement())
+  pv1Curr   Float?   @map("pv1_curr")
+  pv1Volt   Float?   @map("pv1_volt")
+  pv2Curr   Float?   @map("pv2_curr")
+  pv2Volt   Float?   @map("pv2_volt")
+  pv3Curr   Float?   @map("pv3_curr")
+  pv3Volt   Float?   @map("pv3_volt")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  loggers NojsLogger[]
+
+  @@map("pv")
+}
