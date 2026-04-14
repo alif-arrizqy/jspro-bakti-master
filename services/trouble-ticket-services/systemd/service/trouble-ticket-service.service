@@ -1,0 +1,15 @@
+[Unit]
+Description=JSPro Bakti Master - Trouble Ticket Service
+
+[Service]
+Type=simple
+User=monitoring
+# Path folder tempat binari berada
+WorkingDirectory=/home/monitoring/bakti-projects/jspro-bakti-master/jspro-bakti-trouble-ticket/services/trouble-ticket-services
+# Path lengkap ke file binari 'trouble-ticket-service'
+ExecStart=/home/monitoring/bakti-projects/jspro-bakti-master/jspro-bakti-trouble-ticket/services/trouble-ticket-services/trouble-ticket-service
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

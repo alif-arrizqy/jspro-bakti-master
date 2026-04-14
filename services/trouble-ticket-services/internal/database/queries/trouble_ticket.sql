@@ -31,7 +31,8 @@ WHERE
             OR tt.ticket_number ILIKE '%' || $3 || '%'
         ))
         OR tt.site_id = ANY($4::text[])
-    );
+    )
+    AND ($5::integer = 0 OR tt.pic_id = $5);
 
 -- name: ListTroubleTickets :many
 SELECT
@@ -63,6 +64,7 @@ WHERE
         ))
         OR tt.site_id = ANY($6::text[])
     )
+    AND ($7::integer = 0 OR tt.pic_id = $7)
 ORDER BY tt.created_at DESC
 LIMIT $4 OFFSET $5;
 
