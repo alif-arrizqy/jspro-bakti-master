@@ -48,6 +48,7 @@ enum MigrationStatus {
 // ===========================================
 model SiteInfo {
   id              Int             @id @default(autoincrement())
+  noJS            String?         @map("nojs") @db.VarChar(10)
   prCode          String?         @unique @map("pr_code") @db.VarChar(50)
   siteId          String          @unique @map("site_id") @db.VarChar(50)
   terminalId      String?         @map("terminal_id") @db.VarChar(50)
