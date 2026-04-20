@@ -62,6 +62,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		tt.POST("", ttHandler.Create)
 		tt.GET("", ttHandler.GetAll)
+		tt.GET("/summary", ttHandler.GetSummary)
 		// Static paths must be registered before wildcard /:ticketNumber
 		tt.GET("/refresh", ttHandler.Refresh)
 		tt.GET("/export", ttHandler.ExportExcel)
