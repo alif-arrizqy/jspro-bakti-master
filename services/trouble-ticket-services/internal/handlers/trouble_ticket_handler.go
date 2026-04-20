@@ -31,6 +31,85 @@ func NewTroubleTicketHandler() *TroubleTicketHandler {
 	}
 }
 
+// GetSummary handles GET /api/v1/trouble-ticket/summary
+func (h *TroubleTicketHandler) GetSummary(c *gin.Context) {
+	ctx := c.Request.Context()
+	pool := database.GetDB()
+
+	// 1. Total problem per Status
+	type statusCount struct {
+		Status string `json:"status"`
+		Total  int64  `json:"total"`
+	}
+	statusCounts := []statusCount{}
+	statusRows, err := pool.Query(ctx, "SELECT status, COUNT(*) as total FROM trouble_ticket GROUP BY status")
+	if err == nil {
+		defer statusRows.Close()
+		for statusRows.Next() {
+			var sc statusCount
+			if err := statusRows.Scan(&sc.Status, &sc.Total); err == nil {
+				statusCounts = append(statusCounts, sc)
+			}
+		}
+	}
+
+	// 2. Total problem per PIC
+	type picCount struct {
+		PicID   int32  `json:"picId"`
+		PicName string `json:"picName"`
+		Total   int64  `json:"total"`
+	}
+	picCounts := []picCount{}
+	picRows, err := pool.Query(ctx, `
+		SELECT p.id, p.name, COUNT(tt.id) as total 
+		FROM pic p 
+		LEFT JOIN trouble_ticket tt ON p.id = tt.pic_id 
+		GROUP BY p.id, p.name
+		HAVING COUNT(tt.id) > 0
+		ORDER BY total DESC
+	`)
+	if err == nil {
+		defer picRows.Close()
+		for picRows.Next() {
+			var pc picCount
+			if err := picRows.Scan(&pc.PicID, &pc.PicName, &pc.Total); err == nil {
+				picCounts = append(picCounts, pc)
+			}
+		}
+	}
+
+	// 3. Total problem per Problem Type
+	type problemCount struct {
+		ProblemID   int32  `json:"problemId"`
+		ProblemName string `json:"problemName"`
+		Total       int64  `json:"total"`
+	}
+	problemCounts := []problemCount{}
+	problemRows, err := pool.Query(ctx, `
+		SELECT pm.id, pm.name, COUNT(ttp.id) as total 
+		FROM problem_master pm 
+		LEFT JOIN trouble_ticket_problem ttp ON pm.id = ttp.problem_id 
+		GROUP BY pm.id, pm.name
+		HAVING COUNT(ttp.id) > 0
+		ORDER BY total DESC
+	`)
+	if err == nil {
+		defer problemRows.Close()
+		for problemRows.Next() {
+			var prc problemCount
+			if err := problemRows.Scan(&prc.ProblemID, &prc.ProblemName, &prc.Total); err == nil {
+				problemCounts = append(problemCounts, prc)
+			}
+		}
+	}
+
+	utils.Success(c, "Trouble ticket summary retrieved successfully", gin.H{
+		"byStatus":  statusCounts,
+		"byPic":     picCounts,
+		"byProblem": problemCounts,
+	})
+}
+
 type ticketListItem struct {
 	TicketNumber   string                       `json:"ticketNumber"`
 	TicketType     string                       `json:"ticketType"`
@@ -300,18 +379,19 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	total, err := h.queries.CountTroubleTickets(ctx, sqlcdb.CountTroubleTicketsParams{
-		Column1: statusFilter,
-		Column2: int32(ticketTypeFilter),
-		Column3: siteIDFilter,
-		Column4: siteIDsFromName,
-		Column5: int32(picIDFilter),
-	})
-	if err != nil {
-		h.logger.Warn("Failed to count trouble tickets", zap.Error(err))
-	}
+    total, err := h.queries.CountTroubleTickets(ctx, sqlcdb.CountTroubleTicketsParams{
+        Column1: statusFilter,
+        Column2: int32(ticketTypeFilter),
+        Column3: siteIDFilter,
+        Column4: siteIDsFromName,
+        Column5: int32(picIDFilter),
+    })
+    if err != nil {
+        h.logger.Warn("Failed to count trouble tickets", zap.Error(err))
+    }
 
-	totalPages := 0
+    pool := database.GetDB()
+    totalPages := 0
 	if total > 0 {
 		totalPages = int((total + int64(limitParam) - 1) / int64(limitParam))
 	}
@@ -320,6 +400,11 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		Limit:      int(limitParam),
 		Total:      total,
 		TotalPages: totalPages,
+	}
+
+	statusArray := []string{}
+	if statusFilter != "" {
+		statusArray = strings.Split(statusFilter, ",")
 	}
 
 	tickets, err := h.queries.ListTroubleTickets(ctx, sqlcdb.ListTroubleTicketsParams{
@@ -331,6 +416,56 @@ func (h *TroubleTicketHandler) GetAll(c *gin.Context) {
 		Column6: siteIDsFromName,
 		Column7: int32(picIDFilter),
 	})
+
+	// If filtering by multiple statuses, sqlc's generated query might not suffice if it uses =.
+	// However, we can re-filter or use a custom query.
+	// Looking at the ListTroubleTickets generated code, it uses: ($1::text = '' OR tt.status::text = $1)
+	// I'll update it to use ANY if multiple statuses are provided.
+	if len(statusArray) > 1 {
+		// Use raw SQL for multi-status support
+		query := `
+			SELECT
+				tt.id, tt.ticket_number, tt.ticket_type_id, ttype.name AS ticket_type_name,
+				tt.date_down, tt.site_id, tt.sla_avg, tt.pic_id, p.name AS pic_name,
+				tt.plan_cm, tt.action, tt.status, tt.created_at, tt.updated_at
+			FROM trouble_ticket tt
+			JOIN type_ticket ttype ON tt.ticket_type_id = ttype.id
+			JOIN pic p ON tt.pic_id = p.id
+			WHERE (tt.status::text = ANY($1))
+				AND ($2::integer = 0 OR tt.ticket_type_id = $2)
+				AND (
+					($3::text = '' AND cardinality($4::text[]) = 0)
+					OR ($3::text != '' AND (tt.site_id ILIKE '%' || $3 || '%' OR tt.ticket_number ILIKE '%' || $3 || '%'))
+					OR tt.site_id = ANY($4::text[])
+				)
+				AND ($5::integer = 0 OR tt.pic_id = $5)
+			ORDER BY tt.created_at DESC
+			LIMIT $6 OFFSET $7
+		`
+		rows, err := pool.Query(ctx, query, statusArray, int32(ticketTypeFilter), siteIDFilter, siteIDsFromName, int32(picIDFilter), int32(limitParam), int32(offset))
+		if err == nil {
+			defer rows.Close()
+			tickets = []sqlcdb.ListTroubleTicketsRow{}
+			for rows.Next() {
+				var t sqlcdb.ListTroubleTicketsRow
+				var dateDown pgtype.Date
+				var slaAvg pgtype.Numeric
+				var createdAt, updatedAt pgtype.Timestamp
+				err := rows.Scan(
+					&t.ID, &t.TicketNumber, &t.TicketTypeID, &t.TicketTypeName,
+					&dateDown, &t.SiteID, &slaAvg, &t.PicID, &t.PicName,
+					&t.PlanCm, &t.Action, &t.Status, &createdAt, &updatedAt,
+				)
+				if err == nil {
+					t.DateDown = dateDown
+					t.SlaAvg = slaAvg
+					t.CreatedAt = createdAt
+					t.UpdatedAt = updatedAt
+					tickets = append(tickets, t)
+				}
+			}
+		}
+	}
 	if err != nil {
 		utils.HandleError(c, err, "Failed to get trouble tickets", h.logger)
 		return
