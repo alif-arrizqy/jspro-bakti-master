@@ -51,7 +51,7 @@ export const config = {
         password: env.MQTT_PASSWORD,
         clientId: env.MQTT_CLIENT_ID,
         topicPattern: env.MQTT_TOPIC_PATTERN,
-        qos: env.MQTT_QOS,
+        qos: env.MQTT_QOS as 0 | 1 | 2,
         keepalive: env.MQTT_KEEPALIVE,
         reconnectPeriod: env.MQTT_RECONNECT_PERIOD,
     },
