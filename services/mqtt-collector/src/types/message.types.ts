@@ -8,7 +8,7 @@ import { z } from "zod";
 
 // Site information schema
 const SiteInfoSchema = z.object({
-    ip_address: z.string().ipv4().optional(),
+    ip_address: z.string().optional(),
     site_id: z.string().min(1).max(20),
     site_name: z.string().min(1),
 });
