@@ -25,7 +25,7 @@ const envSchema = z.object({
         .default("info"),
 
     // Optional
-    MQTT_QOS: z.coerce.number().min(0).max(2).default(1),
+    MQTT_QOS: z.coerce.number().min(0).max(2).default(2),
     MQTT_KEEPALIVE: z.coerce.number().default(60),
     MQTT_RECONNECT_PERIOD: z.coerce.number().default(5000),
 });
@@ -51,7 +51,7 @@ export const config = {
         password: env.MQTT_PASSWORD,
         clientId: env.MQTT_CLIENT_ID,
         topicPattern: env.MQTT_TOPIC_PATTERN,
-        qos: env.MQTT_QOS as 0 | 1 | 2,
+        qos: env.MQTT_QOS,
         keepalive: env.MQTT_KEEPALIVE,
         reconnectPeriod: env.MQTT_RECONNECT_PERIOD,
     },
