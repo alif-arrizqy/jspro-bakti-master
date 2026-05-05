@@ -28,8 +28,8 @@ export class SlaBaktiService {
      * Rules:
      * - sla = 0 : Very Bad
      * - sla > 95.5 : Meet SLA
-     * - 75 <= sla <= 95.5 : Fair
-     * - 70 <= sla < 75 : Poor
+     * - 70 <= sla <= 95.5 : Fair
+     * - 70 <= sla < 70 : Poor
      * - 0 < sla < 70 : Bad
      */
     private calculateSlaStatus(sla: number): "Meet SLA" | "Very Bad" | "Bad" | "Fair" | "Poor" {
@@ -37,7 +37,7 @@ export class SlaBaktiService {
             return "Very Bad";
         } else if (sla > 95.5) {
             return "Meet SLA";
-        } else if (sla >= 75) {
+        } else if (sla >= 70) {
             return "Fair";
         } else if (sla >= 70) {
             return "Poor";
@@ -152,16 +152,32 @@ export class SlaBaktiService {
             );
         }
 
-        // Prepare validDataForSave
-        const validDataForSave: SlaBaktiTypes.SlaBaktiInput[] = validData.map((row) => ({
-            date: new Date(row.date),
-            siteId: row.siteId,
-            prCode: row.prCode,
-            sla: row.sla,
-            powerUptime: row.powerUptime,
-            powerDowntime: row.powerDowntime,
-            statusSla: row.statusSla,
-        }));
+        // Fetch site details to determine statusSites per site (terestrial vs non_terestrial)
+        let siteDetailsMap: Map<string, import("../types/sites.types").SiteDetailInfo>;
+        try {
+            siteDetailsMap = await sitesService.getSiteDetailsCached();
+        } catch (error) {
+            slaLogger.warn({ error }, "Failed to fetch site details for statusSites, defaulting all to non_terestrial");
+            siteDetailsMap = new Map();
+        }
+
+        // Prepare validDataForSave — choose SLA column based on statusSites:
+        // terestrial  → powerUptimeMqtt (Power Uptime MQTT %)
+        // non_terestrial → powerUptime  (Power Uptime %)
+        const validDataForSave: SlaBaktiTypes.SlaBaktiInput[] = validData.map((row) => {
+            const siteDetail = siteDetailsMap.get(row.siteId);
+            const statusSites = siteDetail?.statusSites ?? 'non_terestrial';
+            const sla = statusSites === 'terestrial' ? (row.powerUptimeMqtt ?? row.powerUptime) : row.powerUptime;
+            return {
+                date: new Date(row.date),
+                siteId: row.siteId,
+                prCode: row.prCode,
+                sla,
+                powerUptime: row.powerUptime,
+                powerDowntime: row.powerDowntime,
+                statusSla: row.statusSla,
+            };
+        });
 
         return {
             preview: {
@@ -997,25 +1013,13 @@ export class SlaBaktiService {
      */
     /**
      * Get date range for problem data
-     * Rules:
-     * - Normal (tanggal 2+): startDate = tanggal 1 bulan sekarang, endDate = akhir bulan sekarang
-     * - Edge case (tanggal 1): startDate = tanggal 1 bulan sebelumnya, endDate = akhir bulan sebelumnya
+     * Always use the month of endDate: startDate = tanggal 1 bulan endDate, endDate = akhir bulan endDate
+     * This ensures Daily Report with endDate 1 Feb shows February report data, not January
      */
     private getProblemDateRange(endDate: Date): { startDate: Date; endDate: Date } {
         const end = dayjs(endDate);
-        const today = dayjs();
-        
-        // Determine target month
-        let targetMonth = end;
-        
-        // If endDate is the 1st of current month, use previous month
-        if (end.date() === 1 && today.isSame(end, 'month')) {
-            targetMonth = end.subtract(1, 'month');
-        }
-        
-        const startDate = targetMonth.startOf('month').toDate();
-        const problemEndDate = targetMonth.endOf('month').toDate();
-        
+        const startDate = end.startOf('month').toDate();
+        const problemEndDate = end.endOf('month').toDate();
         return { startDate, endDate: problemEndDate };
     }
 
@@ -1426,8 +1430,8 @@ export class SlaBaktiService {
                     versionMap.set(site.batteryVersion, []);
                 }
                 
-                // Calculate statusSP: SLA < 75 = "Potensi SP", else "Clear SP"
-                const statusSP: "Potensi SP" | "Clear SP" = site.slaAverage < 75 ? "Potensi SP" : "Clear SP";
+                // Calculate statusSP: SLA < 70 = "Potensi SP", else "Clear SP"
+                const statusSP: "Potensi SP" | "Clear SP" = site.slaAverage < 70 ? "Potensi SP" : "Clear SP";
                 
                 // Format site object according to requirement
                 const formattedSite: SlaBaktiTypes.SlaBelow95SiteOutput = {
@@ -1436,7 +1440,7 @@ export class SlaBaktiService {
                     downtime: site.downtimeDisplay,
                     problem: site.problem,
                     batteryVersion: site.batteryVersion,  // Always present, not null
-                    statusSP: statusSP,  // "Potensi SP" if SLA < 75, else "Clear SP"
+                    statusSP: statusSP,  // "Potensi SP" if SLA < 70, else "Clear SP"
                 };
                 
                 versionMap.get(site.batteryVersion)!.push(formattedSite);
@@ -1703,7 +1707,7 @@ export class SlaBaktiService {
                                         batteryVersion: version,
                                     });
                                 }
-                            // Updated: Filter for SLA < 95.5% instead of Potensi SP (SLA < 75)
+                            // Updated: Filter for SLA < 95.5% instead of Potensi SP (SLA < 70)
                             } else if (record.sla !== null && record.sla < 95.5) {
                                 if (prevRecord && (prevRecord.sla === null || prevRecord.sla === 0 || (prevRecord.sla !== null && prevRecord.sla < 95.5))) {
                                     if (prevRecord.sla === null || prevRecord.sla === 0) {
@@ -2143,6 +2147,8 @@ export class SlaBaktiService {
                 // Build sites array with calculations
                 const sites: SlaBaktiTypes.SlaMasterResponse["sites"] = [];
                 const allSiteIds = Array.from(new Set(slaData.map((d) => d.siteId)));
+                const standardMasterPics = new Set(["VSAT", "POWER", "SNMP"]);
+                const normalizeMasterProblemPic = (pic: string | null) => (pic ?? "").trim().toUpperCase();
 
                 for (const siteId of allSiteIds) {
                     const siteDetail = siteDetailsMap.get(siteId);
@@ -2214,7 +2220,7 @@ export class SlaBaktiService {
                         : 0;
 
                     // Determine status
-                    const status: "Potensi SP" | "Clear SP" = siteSlaAverage < 75 ? "Potensi SP" : "Clear SP";
+                    const status: "Potensi SP" | "Clear SP" = siteSlaAverage < 70 ? "Potensi SP" : "Clear SP";
                     const slaStatus = this.calculateSlaStatus(siteSlaAverage);
 
                     // Apply status filter
@@ -2243,10 +2249,16 @@ export class SlaBaktiService {
                     // Get problems for this site
                     const problems = siteProblemsMap.get(siteId) || [];
                     
-                    // Apply PIC filter on problems
+                    // Apply PIC filter on problems (standard PICs: case-insensitive; OTHER: non-standard / empty)
                     let filteredProblems = problems;
-                    if (normalizedParams.pic) {
-                        filteredProblems = problems.filter((p) => p.pic === normalizedParams.pic);
+                    if (normalizedParams.pic === "OTHER") {
+                        filteredProblems = problems.filter((p) => {
+                            const u = normalizeMasterProblemPic(p.pic);
+                            return u === "" || !standardMasterPics.has(u);
+                        });
+                    } else if (normalizedParams.pic) {
+                        const wanted = normalizedParams.pic.toUpperCase();
+                        filteredProblems = problems.filter((p) => normalizeMasterProblemPic(p.pic) === wanted);
                     }
 
                     // If PIC filter is applied and no problems match, skip this site
@@ -2262,7 +2274,7 @@ export class SlaBaktiService {
                         talisInstalled: siteDetail.talisInstalled ? dayjs(siteDetail.talisInstalled).format("YYYY-MM-DD") : null,
                         problem: filteredProblems.map((p) => ({
                             date: p.date,
-                            pic: p.pic as "VSAT" | "POWER" | null,
+                            pic: p.pic,
                             problem: p.problem,
                             notes: p.notes,
                         })),
@@ -2317,6 +2329,135 @@ export class SlaBaktiService {
                         total,
                         totalPages: Math.ceil(total / limit),
                     },
+                };
+            },
+            ttl
+        );
+    }
+
+    /**
+     * Helper: get array of terestrial site IDs from sites service (cached)
+     */
+    private async getTerrestrialSiteIds(): Promise<string[]> {
+        const siteDetailsMap = await sitesService.getSiteDetailsCached();
+        return Array.from(siteDetailsMap.entries())
+            .filter(([, details]) => details.statusSites === 'terestrial')
+            .map(([siteId]) => siteId);
+    }
+
+    /**
+     * Get daily SLA chart data for terestrial/MQTT sites only
+     */
+    async getDailyChartTerrestrial(params: SlaBaktiTypes.SlaChartDailyParams): Promise<SlaBaktiTypes.SlaChartDailyResponse> {
+        const cacheKey = CacheService.getDailyChartTerrestrialKey(params.startDate, params.endDate);
+        const ttl = CacheService.calculateTTL(params.startDate, params.endDate);
+
+        return cacheService.get(
+            cacheKey,
+            async () => {
+                const prisma = databaseService.getSlaClient();
+
+                const terrestrialSiteIds = await this.getTerrestrialSiteIds();
+
+                if (terrestrialSiteIds.length === 0) {
+                    slaLogger.warn("No terestrial site IDs found for daily chart terrestrial");
+                    return { data: [] };
+                }
+
+                const startDate = new Date(params.startDate);
+                const endDate = new Date(params.endDate);
+
+                const data = await prisma.slaBakti.findMany({
+                    where: {
+                        date: { gte: startDate, lte: endDate },
+                        siteId: { in: terrestrialSiteIds },
+                    },
+                    select: { date: true, sla: true },
+                    orderBy: { date: "asc" },
+                });
+
+                const dailyMap = new Map<string, { total: number; count: number }>();
+                for (const record of data) {
+                    if (record.sla !== null) {
+                        const dateStr = dayjs(record.date).format("YYYY-MM-DD");
+                        const existing = dailyMap.get(dateStr) || { total: 0, count: 0 };
+                        dailyMap.set(dateStr, {
+                            total: existing.total + record.sla,
+                            count: existing.count + 1,
+                        });
+                    }
+                }
+
+                const result = Array.from(dailyMap.entries())
+                    .map(([date, { total, count }]) => ({
+                        date,
+                        // Konsisten dengan getDailyChart & getDailyChartByBatteryVersion
+                        value: count > 0 ? Number(Math.round(total / count)) : 0,
+                    }))
+                    .sort((a, b) => a.date.localeCompare(b.date));
+
+                return { data: result };
+            },
+            ttl
+        );
+    }
+
+    /**
+     * Get monthly summary for terestrial/MQTT sites only
+     * Returns totalSites and avgSla (same structure per battery-version summary)
+     */
+    async getMonthlySummaryTerrestrial(params: SlaBaktiTypes.SlaDetailMonthlyParams): Promise<{
+        totalSites: number;
+        avgSla: number;
+        slaUnit: string;
+        slaStatus: "Meet SLA" | "Very Bad" | "Bad" | "Fair" | "Poor";
+    }> {
+        const cacheKey = CacheService.getMonthlySummaryTerrestrialKey(params.startDate, params.endDate);
+        const ttl = CacheService.calculateMonthlyTTL(params.startDate);
+
+        return cacheService.get(
+            cacheKey,
+            async () => {
+                const prisma = databaseService.getSlaClient();
+
+                const terrestrialSiteIds = await this.getTerrestrialSiteIds();
+
+                if (terrestrialSiteIds.length === 0) {
+                    slaLogger.warn("No terestrial site IDs found for monthly summary terrestrial");
+                    return { totalSites: 0, avgSla: 0, slaUnit: "%", slaStatus: "Very Bad" as const };
+                }
+
+                const startDate = new Date(params.startDate);
+                const endDate = new Date(params.endDate);
+
+                const allSlaData = await prisma.slaBakti.findMany({
+                    where: {
+                        date: { gte: startDate, lte: endDate },
+                        siteId: { in: terrestrialSiteIds },
+                    },
+                    select: { date: true, siteId: true, sla: true },
+                });
+
+                // Count unique sites from the latest date available
+                const dates = Array.from(new Set(allSlaData.map((d) => dayjs(d.date).format("YYYY-MM-DD")))).sort(
+                    (a, b) => b.localeCompare(a)
+                );
+                const latestDate = dates[0];
+                const latestData = latestDate
+                    ? allSlaData.filter((d) => dayjs(d.date).format("YYYY-MM-DD") === latestDate)
+                    : [];
+                const totalSites = new Set(latestData.map((d) => d.siteId)).size;
+
+                // Calculate average SLA across the full date range
+                const validSla = allSlaData.filter((d) => d.sla !== null && d.sla !== undefined);
+                const avgSla =
+                    validSla.length > 0 ? validSla.reduce((sum, d) => sum + (d.sla || 0), 0) / validSla.length : 0;
+
+                return {
+                    totalSites,
+                    avgSla: Number(avgSla.toFixed(2)),
+                    slaUnit: "%",
+                    slaStatus: this.calculateSlaStatus(avgSla),
                 };
             },
             ttl

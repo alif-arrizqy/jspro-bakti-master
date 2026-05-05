@@ -8,6 +8,7 @@ const COLUMN_MAP = {
     siteId: 'Site ID',
     siteName: 'Nama Site',
     powerUptime: 'Power Uptime (%)',
+    powerUptimeMqtt: 'Power Uptime MQTT (%)',
     statusSla: 'SLA Kategori TOPO',
     powerDowntime: 'Power Downtime (%)',
 };
@@ -19,6 +20,7 @@ export interface ParsedSlaBaktiRow {
     prCode: string | null;
     sla: number | null;
     powerUptime: number | null;
+    powerUptimeMqtt: number | null;
     powerDowntime: number | null;
     statusSla: string | null;
 }
@@ -115,26 +117,59 @@ export async function parseSlaBaktiExcel(buffer: Buffer): Promise<ParseResult> {
         siteId: null,
         siteName: null,
         powerUptime: null,
+        powerUptimeMqtt: null,
         statusSla: null,
         powerDowntime: null,
     };
 
-    // Find column indices by matching header names
+    // Normalize column name for flexible matching:
+    // - lowercase
+    // - remove spaces around parentheses: "MQTT (%)" → "MQTT(%)"
+    // - collapse multiple spaces to one
+    // This handles variations like "Power Uptime MQTT(%)" vs "Power Uptime MQTT (%)"
+    const normalizeColName = (name: string): string =>
+        name.toLowerCase()
+            .replace(/\s*\(\s*/g, '(')
+            .replace(/\s*\)\s*/g, ')')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+    // Pre-compute normalized versions of COLUMN_MAP keys for comparison
+    const normalizedMap = {
+        date: normalizeColName(COLUMN_MAP.date),
+        siteId: normalizeColName(COLUMN_MAP.siteId),
+        siteName: normalizeColName(COLUMN_MAP.siteName),
+        powerUptime: normalizeColName(COLUMN_MAP.powerUptime),
+        powerUptimeMqtt: normalizeColName(COLUMN_MAP.powerUptimeMqtt),
+        statusSla: normalizeColName(COLUMN_MAP.statusSla),
+        powerDowntime: normalizeColName(COLUMN_MAP.powerDowntime),
+    };
+
+    // Log raw header values for debugging column name mismatches
+    const rawHeaders: Record<number, string> = {};
     headerRow.eachCell((cell, colNumber) => {
-        const cellValue = String(cell.value || '').trim();
-        
-        // Match column names (case-insensitive, flexible matching)
-        if (cellValue === COLUMN_MAP.date || cellValue.toLowerCase() === COLUMN_MAP.date.toLowerCase()) {
+        rawHeaders[colNumber] = String(cell.value || '');
+    });
+    excelLogger.info({ rawHeaders }, "Raw Excel header values");
+
+    // Find column indices by matching header names (normalized, case-insensitive)
+    headerRow.eachCell((cell, colNumber) => {
+        const cellValue = normalizeColName(String(cell.value || ''));
+
+        if (cellValue === normalizedMap.date) {
             columnIndices.date = colNumber;
-        } else if (cellValue === COLUMN_MAP.siteId || cellValue.toLowerCase() === COLUMN_MAP.siteId.toLowerCase()) {
+        } else if (cellValue === normalizedMap.siteId) {
             columnIndices.siteId = colNumber;
-        } else if (cellValue === COLUMN_MAP.siteName || cellValue.toLowerCase() === COLUMN_MAP.siteName.toLowerCase()) {
+        } else if (cellValue === normalizedMap.siteName) {
             columnIndices.siteName = colNumber;
-        } else if (cellValue === COLUMN_MAP.powerUptime || cellValue.toLowerCase() === COLUMN_MAP.powerUptime.toLowerCase()) {
+        } else if (cellValue === normalizedMap.powerUptimeMqtt) {
+            // Check MQTT column BEFORE powerUptime to avoid partial matches
+            columnIndices.powerUptimeMqtt = colNumber;
+        } else if (cellValue === normalizedMap.powerUptime) {
             columnIndices.powerUptime = colNumber;
-        } else if (cellValue === COLUMN_MAP.statusSla || cellValue.toLowerCase() === COLUMN_MAP.statusSla.toLowerCase()) {
+        } else if (cellValue === normalizedMap.statusSla) {
             columnIndices.statusSla = colNumber;
-        } else if (cellValue === COLUMN_MAP.powerDowntime || cellValue.toLowerCase() === COLUMN_MAP.powerDowntime.toLowerCase()) {
+        } else if (cellValue === normalizedMap.powerDowntime) {
             columnIndices.powerDowntime = colNumber;
         }
     });
@@ -162,6 +197,7 @@ export async function parseSlaBaktiExcel(buffer: Buffer): Promise<ParseResult> {
             const siteIdValue = columnIndices.siteId ? row.getCell(columnIndices.siteId).value : null;
             const siteNameValue = columnIndices.siteName ? row.getCell(columnIndices.siteName).value : null;
             const powerUptimeValue = columnIndices.powerUptime ? row.getCell(columnIndices.powerUptime).value : null;
+            const powerUptimeMqttValue = columnIndices.powerUptimeMqtt ? row.getCell(columnIndices.powerUptimeMqtt).value : null;
             const statusSlaValue = columnIndices.statusSla ? row.getCell(columnIndices.statusSla).value : null;
             const powerDowntimeValue = columnIndices.powerDowntime ? row.getCell(columnIndices.powerDowntime).value : null;
 
@@ -174,6 +210,7 @@ export async function parseSlaBaktiExcel(buffer: Buffer): Promise<ParseResult> {
             const siteId = parseString(siteIdValue);
             const siteName = parseString(siteNameValue);
             const powerUptime = parseNumber(powerUptimeValue);
+            const powerUptimeMqtt = parseNumber(powerUptimeMqttValue);
             const powerDowntime = parseNumber(powerDowntimeValue);
             const statusSla = parseString(statusSlaValue);
 
@@ -188,7 +225,8 @@ export async function parseSlaBaktiExcel(buffer: Buffer): Promise<ParseResult> {
                 continue;
             }
 
-            // Calculate SLA (power uptime is the SLA value)
+            // Default SLA = powerUptime (non-terestrial). The service layer will
+            // override with powerUptimeMqtt for terestrial sites based on statusSites.
             const sla = powerUptime;
 
             data.push({
@@ -198,6 +236,7 @@ export async function parseSlaBaktiExcel(buffer: Buffer): Promise<ParseResult> {
                 prCode: null, // PR Code not in Excel, will be filled later if needed
                 sla,
                 powerUptime,
+                powerUptimeMqtt,
                 powerDowntime,
                 statusSla,
             });

@@ -34,3 +34,13 @@ export interface BatteryVersionReasonResponse {
     createdAt: string;
 }
 
+// Response type for getReasonsByBatteryVersion
+// Includes batteryVersionId (BatteryVersionReason.id) so frontend can use the correct ID for deletion
+export interface BatteryVersionReasonDetailResponse {
+    id: number;               // SlaReason.id (for display)
+    batteryVersionId: number; // BatteryVersionReason.id (use this for DELETE /battery-version/:id)
+    reason: string;
+    createdAt: string;
+    updatedAt: string;
+}
+

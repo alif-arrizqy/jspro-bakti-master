@@ -16,6 +16,7 @@ export interface SiteDetailInfo {
     province: string | null;
     batteryVersion: string | null;
     talisInstalled: string | null;
+    statusSites: 'terestrial' | 'non_terestrial';
 }
 
 export interface SitesApiResponse {
