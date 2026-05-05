@@ -303,8 +303,9 @@ export const slaMasterQuerySchema = {
         },
         pic: {
             type: "string",
-            enum: ["VSAT", "POWER", "SNMP"],
-            description: "Filter by PIC in problem reports",
+            enum: ["VSAT", "POWER", "SNMP", "OTHER"],
+            description:
+                "Filter by PIC in problem reports. OTHER = problems whose PIC is empty or not VSAT/POWER/SNMP (case-insensitive for the standard three).",
         },
         page: {
             type: "integer",
@@ -365,7 +366,7 @@ export const slaMasterResponseSchema = {
                                     type: "object",
                                     properties: {
                                         date: { type: "string", format: "date" },
-                                        pic: { type: "string", enum: ["VSAT", "POWER", "SNMP"], nullable: true },
+                                        pic: { type: "string", nullable: true },
                                         problem: { type: "string", nullable: true },
                                         notes: { type: "string", nullable: true },
                                     },
