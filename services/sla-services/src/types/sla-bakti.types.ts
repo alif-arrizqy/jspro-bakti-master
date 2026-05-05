@@ -296,14 +296,14 @@ export interface SlaMasterParams {
     slaMin?: number;
     slaMax?: number;
     province?: "Maluku" | "Papua";
-    pic?: "VSAT" | "POWER" | "SNMP";
+    pic?: "VSAT" | "POWER" | "SNMP" | "OTHER";
     page?: number;
     limit?: number;
 }
 
 export interface SlaMasterProblemItem {
     date: string;
-    pic: "VSAT" | "POWER" | "SNMP" | null;
+    pic: string | null;
     problem: string | null;
     notes: string | null;
 }

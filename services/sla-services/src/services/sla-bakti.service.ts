@@ -28,8 +28,8 @@ export class SlaBaktiService {
      * Rules:
      * - sla = 0 : Very Bad
      * - sla > 95.5 : Meet SLA
-     * - 75 <= sla <= 95.5 : Fair
-     * - 70 <= sla < 75 : Poor
+     * - 70 <= sla <= 95.5 : Fair
+     * - 70 <= sla < 70 : Poor
      * - 0 < sla < 70 : Bad
      */
     private calculateSlaStatus(sla: number): "Meet SLA" | "Very Bad" | "Bad" | "Fair" | "Poor" {
@@ -37,7 +37,7 @@ export class SlaBaktiService {
             return "Very Bad";
         } else if (sla > 95.5) {
             return "Meet SLA";
-        } else if (sla >= 75) {
+        } else if (sla >= 70) {
             return "Fair";
         } else if (sla >= 70) {
             return "Poor";
@@ -1430,8 +1430,8 @@ export class SlaBaktiService {
                     versionMap.set(site.batteryVersion, []);
                 }
                 
-                // Calculate statusSP: SLA < 75 = "Potensi SP", else "Clear SP"
-                const statusSP: "Potensi SP" | "Clear SP" = site.slaAverage < 75 ? "Potensi SP" : "Clear SP";
+                // Calculate statusSP: SLA < 70 = "Potensi SP", else "Clear SP"
+                const statusSP: "Potensi SP" | "Clear SP" = site.slaAverage < 70 ? "Potensi SP" : "Clear SP";
                 
                 // Format site object according to requirement
                 const formattedSite: SlaBaktiTypes.SlaBelow95SiteOutput = {
@@ -1440,7 +1440,7 @@ export class SlaBaktiService {
                     downtime: site.downtimeDisplay,
                     problem: site.problem,
                     batteryVersion: site.batteryVersion,  // Always present, not null
-                    statusSP: statusSP,  // "Potensi SP" if SLA < 75, else "Clear SP"
+                    statusSP: statusSP,  // "Potensi SP" if SLA < 70, else "Clear SP"
                 };
                 
                 versionMap.get(site.batteryVersion)!.push(formattedSite);
@@ -1707,7 +1707,7 @@ export class SlaBaktiService {
                                         batteryVersion: version,
                                     });
                                 }
-                            // Updated: Filter for SLA < 95.5% instead of Potensi SP (SLA < 75)
+                            // Updated: Filter for SLA < 95.5% instead of Potensi SP (SLA < 70)
                             } else if (record.sla !== null && record.sla < 95.5) {
                                 if (prevRecord && (prevRecord.sla === null || prevRecord.sla === 0 || (prevRecord.sla !== null && prevRecord.sla < 95.5))) {
                                     if (prevRecord.sla === null || prevRecord.sla === 0) {
@@ -2147,6 +2147,8 @@ export class SlaBaktiService {
                 // Build sites array with calculations
                 const sites: SlaBaktiTypes.SlaMasterResponse["sites"] = [];
                 const allSiteIds = Array.from(new Set(slaData.map((d) => d.siteId)));
+                const standardMasterPics = new Set(["VSAT", "POWER", "SNMP"]);
+                const normalizeMasterProblemPic = (pic: string | null) => (pic ?? "").trim().toUpperCase();
 
                 for (const siteId of allSiteIds) {
                     const siteDetail = siteDetailsMap.get(siteId);
@@ -2218,7 +2220,7 @@ export class SlaBaktiService {
                         : 0;
 
                     // Determine status
-                    const status: "Potensi SP" | "Clear SP" = siteSlaAverage < 75 ? "Potensi SP" : "Clear SP";
+                    const status: "Potensi SP" | "Clear SP" = siteSlaAverage < 70 ? "Potensi SP" : "Clear SP";
                     const slaStatus = this.calculateSlaStatus(siteSlaAverage);
 
                     // Apply status filter
@@ -2247,10 +2249,16 @@ export class SlaBaktiService {
                     // Get problems for this site
                     const problems = siteProblemsMap.get(siteId) || [];
                     
-                    // Apply PIC filter on problems
+                    // Apply PIC filter on problems (standard PICs: case-insensitive; OTHER: non-standard / empty)
                     let filteredProblems = problems;
-                    if (normalizedParams.pic) {
-                        filteredProblems = problems.filter((p) => p.pic === normalizedParams.pic);
+                    if (normalizedParams.pic === "OTHER") {
+                        filteredProblems = problems.filter((p) => {
+                            const u = normalizeMasterProblemPic(p.pic);
+                            return u === "" || !standardMasterPics.has(u);
+                        });
+                    } else if (normalizedParams.pic) {
+                        const wanted = normalizedParams.pic.toUpperCase();
+                        filteredProblems = problems.filter((p) => normalizeMasterProblemPic(p.pic) === wanted);
                     }
 
                     // If PIC filter is applied and no problems match, skip this site
@@ -2266,7 +2274,7 @@ export class SlaBaktiService {
                         talisInstalled: siteDetail.talisInstalled ? dayjs(siteDetail.talisInstalled).format("YYYY-MM-DD") : null,
                         problem: filteredProblems.map((p) => ({
                             date: p.date,
-                            pic: p.pic as "VSAT" | "POWER" | null,
+                            pic: p.pic,
                             problem: p.problem,
                             notes: p.notes,
                         })),

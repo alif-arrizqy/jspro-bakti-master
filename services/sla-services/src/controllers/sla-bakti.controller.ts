@@ -697,7 +697,7 @@ export class SlaBaktiController {
                 slaMin?: number;
                 slaMax?: number;
                 province?: "Maluku" | "Papua";
-                pic?: "VSAT" | "POWER" | "SNMP";
+                pic?: "VSAT" | "POWER" | "SNMP" | "OTHER";
                 page?: number;
                 limit?: number;
             };
