@@ -18,6 +18,41 @@ import (
 	"go.uber.org/zap"
 )
 
+// parseDocumentationDates extracts an optional per-file date array from the
+// multipart form. Both `documentation_dates` (JSON array string) and repeated
+// `documentation_date` fields are supported so the API stays ergonomic for
+// either curl-style or programmatic clients.
+func parseDocumentationDates(c *gin.Context, expectedLen int) []*string {
+	out := make([]*string, expectedLen)
+
+	if raw := c.PostForm("documentation_dates"); raw != "" {
+		var parsed []string
+		if err := json.Unmarshal([]byte(raw), &parsed); err == nil {
+			for i := 0; i < expectedLen && i < len(parsed); i++ {
+				if s := strings.TrimSpace(parsed[i]); s != "" {
+					v := s
+					out[i] = &v
+				}
+			}
+			return out
+		}
+	}
+
+	form, err := c.MultipartForm()
+	if err == nil && form != nil && form.Value != nil {
+		if values, ok := form.Value["documentation_date"]; ok {
+			for i := 0; i < expectedLen && i < len(values); i++ {
+				if s := strings.TrimSpace(values[i]); s != "" {
+					v := s
+					out[i] = &v
+				}
+			}
+		}
+	}
+
+	return out
+}
+
 type CreateSparepartStockRequest struct {
 	LocationID  uint             `json:"location_id" binding:"required"`
 	SparepartID uint             `json:"sparepart_id" binding:"required"`
@@ -26,38 +61,30 @@ type CreateSparepartStockRequest struct {
 	Notes       *string          `json:"notes,omitempty"`
 }
 
-// Helper function to convert []string to []byte (JSONB)
-func documentationToBytes(docs []string) []byte {
-	if len(docs) == 0 {
-		return []byte("[]")
-	}
-	data, _ := json.Marshal(docs)
-	return data
+// Documentation helpers are kept as thin wrappers around utils so the rest
+// of this file stays terse. The legacy []string column shape is handled by
+// utils.ParseDocumentation automatically.
+func documentationToBytes(entries []utils.DocumentationEntry) []byte {
+	return utils.SerializeDocumentation(entries)
 }
 
-// Helper function to convert []byte (JSONB) to []string
-func documentationFromBytes(data []byte) []string {
-	if len(data) == 0 {
-		return []string{}
-	}
-	var docs []string
-	json.Unmarshal(data, &docs)
-	return docs
+func documentationFromBytes(data []byte) []utils.DocumentationEntry {
+	return utils.ParseDocumentation(data)
 }
 
 // SparepartStockResponse represents the nested response structure for sparepart stock
 type SparepartStockResponse struct {
-	ID            int32                   `json:"id"`
-	LocationID    int32                   `json:"location_id"`
-	SparepartID   int32                   `json:"sparepart_id"`
-	StockType     string                  `json:"stock_type"`
-	Quantity      int32                   `json:"quantity"`
-	Documentation []string                `json:"documentation"`
-	Notes         *string                 `json:"notes,omitempty"`
-	CreatedAt     string                  `json:"created_at"`
-	UpdatedAt     string                  `json:"updated_at"`
-	Location      SparepartStockLocation  `json:"location"`
-	Sparepart     SparepartStockSparepart `json:"sparepart"`
+	ID            int32                      `json:"id"`
+	LocationID    int32                      `json:"location_id"`
+	SparepartID   int32                      `json:"sparepart_id"`
+	StockType     string                     `json:"stock_type"`
+	Quantity      int32                      `json:"quantity"`
+	Documentation []utils.DocumentationEntry `json:"documentation"`
+	Notes         *string                    `json:"notes,omitempty"`
+	CreatedAt     string                     `json:"created_at"`
+	UpdatedAt     string                     `json:"updated_at"`
+	Location      SparepartStockLocation     `json:"location"`
+	Sparepart     SparepartStockSparepart    `json:"sparepart"`
 }
 
 type SparepartStockLocation struct {
@@ -89,14 +116,14 @@ type SparepartStockGroupedResponse struct {
 
 // SparepartStockGroupedItem represents a sparepart item in the grouped response
 type SparepartStockGroupedItem struct {
-	ID            int32    `json:"id"`       // sparepart_id
-	StockID       int32    `json:"stock_id"` // stock item id (PK)
-	Name          string   `json:"name"`
-	ItemType      string   `json:"item_type"`
-	StockType     string   `json:"stock_type"`
-	Quantity      int32    `json:"quantity"`
-	Documentation []string `json:"documentation"`
-	Notes         *string  `json:"notes,omitempty"`
+	ID            int32                      `json:"id"`       // sparepart_id
+	StockID       int32                      `json:"stock_id"` // stock item id (PK)
+	Name          string                     `json:"name"`
+	ItemType      string                     `json:"item_type"`
+	StockType     string                     `json:"stock_type"`
+	Quantity      int32                      `json:"quantity"`
+	Documentation []utils.DocumentationEntry `json:"documentation"`
+	Notes         *string                    `json:"notes,omitempty"`
 }
 
 // transformSparepartStock transforms sqlc flat structure to nested response
@@ -568,20 +595,23 @@ func (h *SparepartStockHandler) Create(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Process file uploads
-	var documentation []string
+	var documentation []utils.DocumentationEntry
 	form, err := c.MultipartForm()
 	if err == nil && form.File != nil {
 		files := form.File["photos"]
+		dates := parseDocumentationDates(c, len(files))
 		subDir := utils.GetSubDirForSparepartStock(string(req.StockType))
 		prefix := utils.GetPrefixForSparepartStock(string(req.StockType))
-		for _, file := range files {
+		for idx, file := range files {
 			path, err := utils.ProcessImageUpload(file, subDir, prefix, h.logger)
 			if err != nil {
 				utils.BadRequest(c, "Failed to upload photo: "+err.Error())
 				return
 			}
-			documentation = append(documentation, path)
+			documentation = append(documentation, utils.DocumentationEntry{
+				Path: path,
+				Date: dates[idx],
+			})
 		}
 	}
 
@@ -733,19 +763,21 @@ func (h *SparepartStockHandler) AddPhotos(c *gin.Context) {
 		return
 	}
 
-	// Get existing documentation
 	existingDocs := documentationFromBytes(item.Documentation)
+	dates := parseDocumentationDates(c, len(files))
 
-	// Append new photos to existing documentation
 	subDir := utils.GetSubDirForSparepartStock(string(item.StockType))
 	prefix := utils.GetPrefixForSparepartStock(string(item.StockType))
-	for _, file := range files {
+	for idx, file := range files {
 		path, err := utils.ProcessImageUpload(file, subDir, prefix, h.logger)
 		if err != nil {
 			utils.BadRequest(c, "Failed to upload photo: "+err.Error())
 			return
 		}
-		existingDocs = append(existingDocs, path)
+		existingDocs = append(existingDocs, utils.DocumentationEntry{
+			Path: path,
+			Date: dates[idx],
+		})
 	}
 
 	// Update documentation
@@ -815,16 +847,13 @@ func (h *SparepartStockHandler) DeletePhoto(c *gin.Context) {
 		return
 	}
 
-	// Delete file from storage
-	filePath := docs[photoIndex]
+	filePath := docs[photoIndex].Path
 	if err := utils.DeleteFile(filePath, h.logger); err != nil {
 		h.logger.Warn("Failed to delete file", zap.Error(err), zap.String("path", filePath))
 	}
 
-	// Remove from array
 	docs = append(docs[:photoIndex], docs[photoIndex+1:]...)
 
-	// Update documentation
 	updateParams := sqlcdb.UpdateSparepartStockDocumentationParams{
 		ID:            int32(id),
 		Documentation: documentationToBytes(docs),
@@ -877,11 +906,10 @@ func (h *SparepartStockHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Delete all photos from storage
 	docs := documentationFromBytes(item.Documentation)
-	for _, path := range docs {
-		if err := utils.DeleteFile(path, h.logger); err != nil {
-			h.logger.Warn("Failed to delete file", zap.Error(err), zap.String("path", path))
+	for _, entry := range docs {
+		if err := utils.DeleteFile(entry.Path, h.logger); err != nil {
+			h.logger.Warn("Failed to delete file", zap.Error(err), zap.String("path", entry.Path))
 		}
 	}
 
@@ -1024,20 +1052,17 @@ func (h *SparepartStockHandler) UpdatePhoto(c *gin.Context) {
 		return
 	}
 
-	// Delete old photo file
-	oldFilePath := docs[photoIndex]
+	oldFilePath := docs[photoIndex].Path
 	if err := utils.DeleteFile(oldFilePath, h.logger); err != nil {
 		h.logger.Warn("Failed to delete old file", zap.Error(err), zap.String("path", oldFilePath))
 	}
 
-	// Get new photo from form
 	file, err := c.FormFile("photo")
 	if err != nil {
 		utils.BadRequest(c, "No photo provided or failed to parse form")
 		return
 	}
 
-	// Upload new photo
 	subDir := utils.GetSubDirForSparepartStock(string(item.StockType))
 	prefix := utils.GetPrefixForSparepartStock(string(item.StockType))
 	newPath, err := utils.ProcessImageUpload(file, subDir, prefix, h.logger)
@@ -1046,10 +1071,12 @@ func (h *SparepartStockHandler) UpdatePhoto(c *gin.Context) {
 		return
 	}
 
-	// Update documentation array
-	docs[photoIndex] = newPath
+	// Preserve existing date unless user explicitly provides a new one.
+	docs[photoIndex].Path = newPath
+	if newDate := strings.TrimSpace(c.PostForm("documentation_date")); newDate != "" {
+		docs[photoIndex].Date = &newDate
+	}
 
-	// Update documentation
 	updateParams := sqlcdb.UpdateSparepartStockDocumentationParams{
 		ID:            int32(id),
 		Documentation: documentationToBytes(docs),

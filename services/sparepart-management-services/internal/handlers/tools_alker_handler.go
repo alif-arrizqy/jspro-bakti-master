@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sparepart-management-services/internal/database"
@@ -19,16 +18,16 @@ import (
 
 // ToolsAlkerResponse represents the nested response structure for tools alker
 type ToolsAlkerResponse struct {
-	ID            int32                   `json:"id"`
-	LocationID    int32                    `json:"location_id"`
-	ToolsID       int32                    `json:"tools_id"`
-	Quantity      int32                    `json:"quantity"`
-	Documentation []string                 `json:"documentation"`
-	Notes         *string                  `json:"notes,omitempty"`
-	CreatedAt     string                   `json:"created_at"`
-	UpdatedAt     string                   `json:"updated_at"`
-	Location      ToolsAlkerLocation       `json:"location"`
-	Tools         ToolsAlkerTools          `json:"tools"`
+	ID            int32                      `json:"id"`
+	LocationID    int32                      `json:"location_id"`
+	ToolsID       int32                      `json:"tools_id"`
+	Quantity      int32                      `json:"quantity"`
+	Documentation []utils.DocumentationEntry `json:"documentation"`
+	Notes         *string                    `json:"notes,omitempty"`
+	CreatedAt     string                     `json:"created_at"`
+	UpdatedAt     string                     `json:"updated_at"`
+	Location      ToolsAlkerLocation         `json:"location"`
+	Tools         ToolsAlkerTools            `json:"tools"`
 }
 
 type ToolsAlkerLocation struct {
@@ -58,14 +57,20 @@ type ToolsAlkerGroupedResponse struct {
 	UpdatedAt  string                     `json:"updated_at"`  // from first tools item
 }
 
-// ToolsAlkerGroupedItem represents a tools item in the grouped response
+// ToolsAlkerGroupedItem represents a tools item in the grouped response.
+//
+// `ID` exposes the master/tools id (FK), while `StockID` exposes the actual
+// `tools_alker_item.id` primary key — the frontend needs the latter to be
+// able to PUT/DELETE individual rows since the row-level id in the grouped
+// response is the location id, not the per-tool PK.
 type ToolsAlkerGroupedItem struct {
-	ID            int32    `json:"id"`            // tools_id
-	Name          string   `json:"name"`
-	ItemType      string   `json:"item_type"`
-	Quantity      int32    `json:"quantity"`
-	Documentation []string `json:"documentation"`
-	Notes         *string  `json:"notes,omitempty"`
+	ID            int32                      `json:"id"`       // tools_id (FK)
+	StockID       int32                      `json:"stock_id"` // tools_alker_item.id (PK)
+	Name          string                     `json:"name"`
+	ItemType      string                     `json:"item_type"`
+	Quantity      int32                      `json:"quantity"`
+	Documentation []utils.DocumentationEntry `json:"documentation"`
+	Notes         *string                    `json:"notes,omitempty"`
 }
 
 // transformToolsAlker transforms ListToolsAlkersRow to nested response
@@ -100,11 +105,7 @@ func transformToolsAlker(row sqlcdb.ListToolsAlkersRow) ToolsAlkerResponse {
 		notes = &row.Notes.String
 	}
 
-	// Parse documentation JSONB
-	var docs []string
-	if len(row.Documentation) > 0 {
-		json.Unmarshal(row.Documentation, &docs)
-	}
+	docs := utils.ParseDocumentation(row.Documentation)
 
 	return ToolsAlkerResponse{
 		ID:            row.ID,
@@ -165,11 +166,7 @@ func transformToolsAlkerFromGet(row sqlcdb.GetToolsAlkerRow) ToolsAlkerResponse 
 		notes = &row.Notes.String
 	}
 
-	// Parse documentation JSONB
-	var docs []string
-	if len(row.Documentation) > 0 {
-		json.Unmarshal(row.Documentation, &docs)
-	}
+	docs := utils.ParseDocumentation(row.Documentation)
 
 	return ToolsAlkerResponse{
 		ID:            row.ID,
@@ -251,14 +248,11 @@ func groupToolsAlkersByLocation(items []sqlcdb.ListToolsAlkersRow) []ToolsAlkerG
 			notes = &item.Notes.String
 		}
 
-		// Parse documentation JSONB
-		var docs []string
-		if len(item.Documentation) > 0 {
-			json.Unmarshal(item.Documentation, &docs)
-		}
+		docs := utils.ParseDocumentation(item.Documentation)
 
 		toolsItem := ToolsAlkerGroupedItem{
 			ID:            item.ToolsID2,
+			StockID:       item.ID,
 			Name:          item.ToolsName,
 			ItemType:      string(item.ItemType),
 			Quantity:      item.Quantity,
@@ -535,20 +529,23 @@ func (h *ToolsAlkerHandler) Create(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Process file uploads
-	var documentation []string
+	var documentation []utils.DocumentationEntry
 	form, err := c.MultipartForm()
 	if err == nil && form.File != nil {
 		files := form.File["photos"]
+		dates := parseDocumentationDates(c, len(files))
 		subDir := "tools_alker"
 		prefix := "tools_alker"
-		for _, file := range files {
+		for idx, file := range files {
 			path, err := utils.ProcessImageUpload(file, subDir, prefix, h.logger)
 			if err != nil {
 				utils.BadRequest(c, "Failed to upload photo: "+err.Error())
 				return
 			}
-			documentation = append(documentation, path)
+			documentation = append(documentation, utils.DocumentationEntry{
+				Path: path,
+				Date: dates[idx],
+			})
 		}
 	}
 
@@ -674,11 +671,10 @@ func (h *ToolsAlkerHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Delete all photos from storage
 	docs := documentationFromBytes(item.Documentation)
-	for _, path := range docs {
-		if err := utils.DeleteFile(path, h.logger); err != nil {
-			h.logger.Warn("Failed to delete file", zap.Error(err), zap.String("path", path))
+	for _, entry := range docs {
+		if err := utils.DeleteFile(entry.Path, h.logger); err != nil {
+			h.logger.Warn("Failed to delete file", zap.Error(err), zap.String("path", entry.Path))
 		}
 	}
 
@@ -817,20 +813,17 @@ func (h *ToolsAlkerHandler) UpdatePhoto(c *gin.Context) {
 		return
 	}
 
-	// Delete old photo file
-	oldFilePath := docs[photoIndex]
+	oldFilePath := docs[photoIndex].Path
 	if err := utils.DeleteFile(oldFilePath, h.logger); err != nil {
 		h.logger.Warn("Failed to delete old file", zap.Error(err), zap.String("path", oldFilePath))
 	}
 
-	// Get new photo from form
 	file, err := c.FormFile("photo")
 	if err != nil {
 		utils.BadRequest(c, "No photo provided or failed to parse form")
 		return
 	}
 
-	// Upload new photo
 	subDir := "tools_alker"
 	prefix := "tools_alker"
 	newPath, err := utils.ProcessImageUpload(file, subDir, prefix, h.logger)
@@ -839,8 +832,10 @@ func (h *ToolsAlkerHandler) UpdatePhoto(c *gin.Context) {
 		return
 	}
 
-	// Update documentation array
-	docs[photoIndex] = newPath
+	docs[photoIndex].Path = newPath
+	if newDate := strings.TrimSpace(c.PostForm("documentation_date")); newDate != "" {
+		docs[photoIndex].Date = &newDate
+	}
 
 	// Update documentation
 	updateParams := sqlcdb.UpdateToolsAlkerDocumentationParams{

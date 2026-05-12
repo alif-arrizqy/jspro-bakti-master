@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -11,6 +13,17 @@ import (
 
 	"go.uber.org/zap"
 )
+
+// uniqueFilenameSuffix returns a value that is virtually guaranteed to be
+// unique even when many files are uploaded inside the same second/multipart
+// request. Format: `<unixNano>_<4-byte hex>`.
+func uniqueFilenameSuffix() string {
+	buf := make([]byte, 4)
+	if _, err := rand.Read(buf); err != nil {
+		return fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	return fmt.Sprintf("%d_%s", time.Now().UnixNano(), hex.EncodeToString(buf))
+}
 
 // ProcessImageUpload handles image upload with subdirectory support
 // subDir: subdirectory within uploads (e.g., "sparepart/new_stock", "tools_alker")
@@ -40,9 +53,7 @@ func ProcessImageUpload(file *multipart.FileHeader, subDir string, prefix string
 		return "", fmt.Errorf("failed to create upload directory: %w", err)
 	}
 
-	// Generate unique filename
-	timestamp := time.Now().Unix()
-	filename := fmt.Sprintf("%s_%d%s", prefix, timestamp, ext)
+	filename := fmt.Sprintf("%s_%s%s", prefix, uniqueFilenameSuffix(), ext)
 	filePath := filepath.Join(uploadDir, filename)
 
 	// Open source file

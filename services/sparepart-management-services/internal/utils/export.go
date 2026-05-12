@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -47,11 +46,7 @@ func ExportSparepartStockToPDF(items []sqlcdb.ListSparepartStocksForExportRow, l
 				notes = notes[:30] + "..."
 			}
 		}
-		// Parse documentation JSONB
-		var docs []string
-		if len(item.Documentation) > 0 {
-			json.Unmarshal(item.Documentation, &docs)
-		}
+		docs := ParseDocumentation(item.Documentation)
 		photos := fmt.Sprintf("%d photo(s)", len(docs))
 
 		// Handle text wrapping for long content
@@ -119,11 +114,7 @@ func ExportSparepartStockToExcel(items []sqlcdb.ListSparepartStocksForExportRow,
 			notes = item.Notes.String
 		}
 		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), notes)
-		// Parse documentation JSONB
-		var docs []string
-		if len(item.Documentation) > 0 {
-			json.Unmarshal(item.Documentation, &docs)
-		}
+		docs := ParseDocumentation(item.Documentation)
 		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), len(docs))
 		createdAt := ""
 		if item.CreatedAt.Valid {
@@ -183,11 +174,7 @@ func ExportToolsAlkerToPDF(items []sqlcdb.ListToolsAlkersForExportRow, logger *z
 				notes = notes[:30] + "..."
 			}
 		}
-		// Parse documentation JSONB
-		var docs []string
-		if len(item.Documentation) > 0 {
-			json.Unmarshal(item.Documentation, &docs)
-		}
+		docs := ParseDocumentation(item.Documentation)
 		photos := fmt.Sprintf("%d photo(s)", len(docs))
 
 		rowHeight := 7.0
@@ -252,11 +239,7 @@ func ExportToolsAlkerToExcel(items []sqlcdb.ListToolsAlkersForExportRow, logger 
 			notes = item.Notes.String
 		}
 		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), notes)
-		// Parse documentation JSONB
-		var docs []string
-		if len(item.Documentation) > 0 {
-			json.Unmarshal(item.Documentation, &docs)
-		}
+		docs := ParseDocumentation(item.Documentation)
 		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), len(docs))
 		createdAt := ""
 		if item.CreatedAt.Valid {
