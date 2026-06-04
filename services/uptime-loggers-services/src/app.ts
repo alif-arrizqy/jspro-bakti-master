@@ -29,8 +29,18 @@ export async function buildApp(): Promise<FastifyInstance> {
     const fastify = Fastify({ logger: false });
 
     await fastify.register(cors, {
-        origin: config.cors.origins,
-        methods: ["GET", "POST", "OPTIONS"],
+        origin: config.cors.allowAll
+            ? true
+            : (origin, cb) => {
+                  if (!origin || config.cors.origins.includes(origin)) {
+                      cb(null, true);
+                      return;
+                  }
+                  appLogger.warn({ origin, allowed: config.cors.origins }, "CORS origin rejected");
+                  cb(null, false);
+              },
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        credentials: true,
     });
 
     await fastify.register(swagger, {

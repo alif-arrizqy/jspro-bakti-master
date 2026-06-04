@@ -4,7 +4,22 @@ import { z } from "zod";
 dotenv.config();
 
 const numStr = (def: number) => z.string().default(String(def)).transform(Number);
-const boolStr = (def: boolean) => z.string().default(String(def)).transform((v) => v === "true");
+const boolStr = (def: boolean) =>
+    z
+        .string()
+        .default(String(def))
+        .transform((v) => v.split("#")[0]?.trim() === "true");
+
+function parseCorsOrigins(raw: string): { allowAll: boolean; origins: string[] } {
+    const origins = raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (origins.includes("*")) {
+        return { allowAll: true, origins: [] };
+    }
+    return { allowAll: false, origins };
+}
 
 const envSchema = z.object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -77,9 +92,7 @@ export const config = {
         sitesTimeoutMs: parsed.data.SITES_SERVICES_TIMEOUT_MS,
         sitesCacheTtlMs: parsed.data.SITES_SERVICES_CACHE_TTL_MS,
     },
-    cors: {
-        origins: parsed.data.CORS_ORIGINS.split(",").map((s) => s.trim()),
-    },
+    cors: parseCorsOrigins(parsed.data.CORS_ORIGINS),
     grafana: {
         baseUrl: parsed.data.GRAFANA_BASE_URL,
         siteVar: parsed.data.GRAFANA_SITE_VAR,
