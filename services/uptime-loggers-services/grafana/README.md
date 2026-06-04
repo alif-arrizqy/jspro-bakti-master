@@ -67,7 +67,7 @@ Datasource provisioning memakai **uid** `data-loggers-timescale` dan nama `DataL
 |---------|--------|
 | Grafik kosong | Pilih `SiteID` yang punya data; perluas time range |
 | Variable SiteID kosong | Tabel `battery_data_loggers` belum berisi data |
-| Panel daily logs kosong | Jalankan `CALL refresh_continuous_aggregate('battery_daily_summary', NULL, NULL);` |
+| Panel daily logs kosong | Apache: `SELECT refresh_battery_daily_summary(NULL, NULL);` — TSL: `CALL refresh_continuous_aggregate(...)` |
 | Link dari dash tidak buka Grafana | Cek `GRAFANA_BASE_URL` dan DNS/VPN ke `grafana.sundaya.local` |
 | Query lambat | Perpendek range waktu; pastikan hypertable aktif |
 
