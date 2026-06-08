@@ -157,6 +157,7 @@ export const siteBodySchema = {
         onairDate: { type: "string", nullable: true },
         gsSustainDate: { type: "string", nullable: true },
         topoSustainDate: { type: "string", nullable: true },
+        talisInstalled: { type: "string", nullable: true },
         providerGs: { type: "string", nullable: true },
         beamProvider: { type: "string", nullable: true },
         cellularOperator: { type: "string", nullable: true },

@@ -229,6 +229,7 @@ export class SitesService {
           onairDate: parseDate(detail.onairDate),
           gsSustainDate: parseDate(detail.gsSustainDate),
           topoSustainDate: parseDate(detail.topoSustainDate),
+          talisInstalled: parseDate(detail.talisInstalled),
           providerGs: detail.providerGs ? emptyStringToNull(detail.providerGs) : null,
           beamProvider: detail.beamProvider ? emptyStringToNull(detail.beamProvider) : null,
           cellularOperator: detail.cellularOperator ? emptyStringToNull(detail.cellularOperator) : null,
@@ -325,6 +326,7 @@ export class SitesService {
       if (cleanedDetail.onairDate !== undefined) detailUpdateData.onairDate = parseDate(cleanedDetail.onairDate);
       if (cleanedDetail.gsSustainDate !== undefined) detailUpdateData.gsSustainDate = parseDate(cleanedDetail.gsSustainDate);
       if (cleanedDetail.topoSustainDate !== undefined) detailUpdateData.topoSustainDate = parseDate(cleanedDetail.topoSustainDate);
+      if (cleanedDetail.talisInstalled !== undefined) detailUpdateData.talisInstalled = parseDate(cleanedDetail.talisInstalled);
       if (cleanedDetail.providerGs !== undefined) detailUpdateData.providerGs = emptyStringToNull(cleanedDetail.providerGs ?? null);
       if (cleanedDetail.beamProvider !== undefined) detailUpdateData.beamProvider = emptyStringToNull(cleanedDetail.beamProvider ?? null);
       if (cleanedDetail.cellularOperator !== undefined) detailUpdateData.cellularOperator = emptyStringToNull(cleanedDetail.cellularOperator ?? null);
@@ -349,6 +351,7 @@ export class SitesService {
             onairDate: parseDate(cleanedDetail.onairDate),
             gsSustainDate: parseDate(cleanedDetail.gsSustainDate),
             topoSustainDate: parseDate(cleanedDetail.topoSustainDate),
+            talisInstalled: parseDate(cleanedDetail.talisInstalled),
             providerGs: emptyStringToNull(cleanedDetail.providerGs ?? null),
             beamProvider: emptyStringToNull(cleanedDetail.beamProvider ?? null),
             cellularOperator: emptyStringToNull(cleanedDetail.cellularOperator ?? null),
