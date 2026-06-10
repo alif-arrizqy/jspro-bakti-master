@@ -1,4 +1,5 @@
 export type BatteryType = "jspro" | "talis5";
+export type SiteStatusFilter = "all" | "terestrial" | "non_terestrial";
 export type SiteStatus = "online" | "offline" | "healthy" | "warning" | "critical";
 export type ConnectivityStatus = "online" | "offline";
 export type UptimeMode = "realtime" | "historical";
@@ -60,6 +61,7 @@ export interface MasterSite {
     batteryType: BatteryType;
     ipSnmp?: string | null;
     ipGwGs?: string | null;
+    statusSites?: string | null;
 }
 
 export interface ConnectivitySnapshot {

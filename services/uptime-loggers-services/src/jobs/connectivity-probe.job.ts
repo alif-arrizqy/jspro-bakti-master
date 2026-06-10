@@ -15,10 +15,17 @@ async function runProbe() {
     running = true;
 
     try {
-        const sites = await sitesClientService.getAllSites();
+        const sites = await sitesClientService.getSitesForProbe();
         const concurrency = config.probe.concurrency;
 
-        probeLogger.info({ siteCount: sites.length, concurrency }, "Starting connectivity probe");
+        probeLogger.info(
+            {
+                siteCount: sites.length,
+                concurrency,
+                siteStatusFilter: config.probe.siteStatus,
+            },
+            "Starting connectivity probe",
+        );
 
         for (let i = 0; i < sites.length; i += concurrency) {
             const batch = sites.slice(i, i + concurrency);
@@ -62,7 +69,14 @@ export const connectivityProbeJob = {
         const intervalSec = Math.max(30, Math.round(config.probe.intervalMs / 1000));
         const cronExpr = `*/${Math.ceil(intervalSec / 60)} * * * *`;
 
-        probeLogger.info({ cronExpr, intervalMs: config.probe.intervalMs }, "Scheduling connectivity probe");
+        probeLogger.info(
+            {
+                cronExpr,
+                intervalMs: config.probe.intervalMs,
+                siteStatusFilter: config.probe.siteStatus,
+            },
+            "Scheduling connectivity probe",
+        );
 
         task = cron.schedule(cronExpr, runProbe);
 

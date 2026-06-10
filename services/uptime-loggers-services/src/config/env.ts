@@ -52,6 +52,7 @@ const envSchema = z.object({
     CONNECTIVITY_PROBE_MODE: z.enum(["tcp", "icmp"]).default("tcp"),
     CONNECTIVITY_PROBE_TCP_PORT: numStr(161),
     CONNECTIVITY_CACHE_TTL_MS: numStr(300000),
+    CONNECTIVITY_PROBE_SITE_STATUS: z.enum(["all", "terestrial", "non_terestrial"]).default("all"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -105,5 +106,6 @@ export const config = {
         mode: parsed.data.CONNECTIVITY_PROBE_MODE,
         tcpPort: parsed.data.CONNECTIVITY_PROBE_TCP_PORT,
         cacheTtlMs: parsed.data.CONNECTIVITY_CACHE_TTL_MS,
+        siteStatus: parsed.data.CONNECTIVITY_PROBE_SITE_STATUS,
     },
 };
