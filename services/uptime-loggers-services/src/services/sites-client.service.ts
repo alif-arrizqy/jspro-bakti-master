@@ -24,7 +24,7 @@ async function getFallbackSitesFromDb(): Promise<MasterSite[]> {
         const rows = await prisma.$queryRawUnsafe<{ site_id: string }[]>(
             `SELECT DISTINCT site_id FROM battery_data.battery_data_loggers ORDER BY site_id`
         );
-        const sites: MasterSite[] = rows.map((r) => ({
+        const sites: MasterSite[] = rows.map((r: { site_id: string }) => ({
             siteId: r.site_id,
             siteName: r.site_id,
             batteryType: r.site_id.toLowerCase().includes("talis") ? "talis5" as BatteryType : "jspro" as BatteryType,
