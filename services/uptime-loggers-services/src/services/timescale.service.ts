@@ -53,7 +53,7 @@ export const timescaleService = {
                 pack_voltage AS last_pack_voltage_mv
              FROM battery_data.battery_data_loggers
              WHERE site_id = ANY($2)
-               AND timestamp >= $1::date
+               AND timestamp >= ($1::date::text || ' 00:00:00+07')::timestamptz
              ORDER BY site_id, timestamp DESC`,
             today,
             siteIds
@@ -65,8 +65,8 @@ export const timescaleService = {
         const rows = await prisma.$queryRawUnsafe<{ site_id: string; cnt: bigint }[]>(
             `SELECT site_id, COUNT(*) AS cnt
              FROM battery_data.battery_data_loggers
-             WHERE timestamp >= $1::date
-               AND timestamp < ($1::date + interval '1 day')
+             WHERE timestamp >= ($1::date::text || ' 00:00:00+07')::timestamptz
+               AND timestamp < (($1::date::text || ' 00:00:00+07')::timestamptz + interval '1 day')
              GROUP BY site_id`,
             date
         );

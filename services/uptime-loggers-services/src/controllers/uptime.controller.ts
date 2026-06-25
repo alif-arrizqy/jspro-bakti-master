@@ -41,13 +41,15 @@ function calcUptimeDuration(pct: number, isRealtime: boolean): string | null {
     return `${h}h ${m.toString().padStart(2, "0")}m`;
 }
 
-function buildGrafanaUrl(siteId: string): string | null {
+function buildGrafanaUrl(siteId: string, dateStr: string): string | null {
     if (!config.grafana.baseUrl) return null;
-    return `${config.grafana.baseUrl}?var-${config.grafana.siteVar}=${siteId}`;
+    const from = dayjs(dateStr).startOf("day").valueOf();
+    const to = dayjs(dateStr).endOf("day").valueOf();
+    return `${config.grafana.baseUrl}?var-${config.grafana.siteVar}=${siteId}&from=${from}&to=${to}`;
 }
 
 function connectivityReferenceMs(dateStr: string): number {
-    const endOfDay = dayjs(dateStr).endOf("day").valueOf();
+    const endOfDay = new Date(`${dateStr}T23:59:59.999Z`).getTime();
     if (isToday(dateStr)) {
         return Math.min(Date.now(), endOfDay);
     }
@@ -56,7 +58,7 @@ function connectivityReferenceMs(dateStr: string): number {
 
 function determineConnectivityStatus(dateStr: string, lastUpdate: Date | null): "online" | "offline" {
     if (!lastUpdate) return "offline";
-    if (dayjs(lastUpdate).format("YYYY-MM-DD") !== dateStr) return "offline";
+    if (lastUpdate.toISOString().split("T")[0] !== dateStr) return "offline";
     const refMs = connectivityReferenceMs(dateStr);
     return refMs - lastUpdate.getTime() < TWO_HOURS_MS ? "online" : "offline";
 }
@@ -199,11 +201,11 @@ export const uptimeController = {
                 uptimeDuration: calcUptimeDuration(pct, mode === "realtime"),
                 status,
                 connectivityStatus,
-                batteryVoltageV: voltageMv != null ? Math.round(voltageMv / 100) / 10 : null,
+                batteryVoltageV: voltageMv != null ? voltageMv / 100 : null,
                 pingLatencyMs: probe?.latencyMs ?? null,
                 connectivityReachable: probe?.reachable ?? false,
                 connectivityProbedAt: probe?.probedAt ?? null,
-                grafanaUrl: buildGrafanaUrl(site.siteId),
+                grafanaUrl: buildGrafanaUrl(site.siteId, date),
             };
         });
 
