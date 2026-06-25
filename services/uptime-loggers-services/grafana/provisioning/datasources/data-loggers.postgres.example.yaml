@@ -1,0 +1,20 @@
+# Rename to data-loggers.postgres.yaml and set password via env or secret.
+# Grafana expands ${GF_DATASOURCE_PG_PASSWORD} if configured in grafana.ini / environment.
+apiVersion: 1
+
+datasources:
+  - name: DataLoggers-Timescale
+    uid: data-loggers-timescale
+    type: postgres
+    access: proxy
+    url: ${GF_DATASOURCE_PG_HOST:your-db-host:5432}
+    user: ${GF_DATASOURCE_PG_USER:grafana_reader}
+    secureJsonData:
+      password: ${GF_DATASOURCE_PG_PASSWORD}
+    jsonData:
+      database: data_loggers_db
+      sslmode: disable
+      postgresVersion: 1500
+      timescaledb: true
+    isDefault: true
+    editable: true

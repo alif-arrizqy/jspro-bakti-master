@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: uptime-loggers
+    orgId: 1
+    folder: Uptime Loggers
+    folderUid: uptime-loggers
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards/uptime-loggers
